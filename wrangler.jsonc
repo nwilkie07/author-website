@@ -29,7 +29,8 @@
 		{
 			"binding": "DB",
 			"database_name": "author-website-db",
-			"database_id": "placeholder-will-be-replaced"
+			"database_id": "f4e57703-4b9b-4163-9f9d-914b0aabbcc3",
+			"remote": true
 		}
 	]
 	/**

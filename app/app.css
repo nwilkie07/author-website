@@ -1,9 +1,25 @@
 @import "tailwindcss";
 
 @font-face {
-  font-family: 'IvyMode';
+  font-family: IvyMode;
   src: url('/fonts/IvyMode.woff2') format('woff2');
   font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: IvyModeBold;
+  src: url('/fonts/IvyModeBold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: bold;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: IvyModeSemiBold;
+  src: url('/fonts/IvyModeSemiBold.woff2') format('woff2');
+  font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
@@ -14,6 +30,14 @@
   font-weight: 400;
   font-display: swap;
   src: url(/fonts/Athelas.woff2) format("woff2");
+}
+
+@font-face {
+  font-family: athelasbook, serif;
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url(/fonts/AthelasBook.woff2) format("woff2");
 }
 
 html,
