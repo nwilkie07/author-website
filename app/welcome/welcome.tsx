@@ -1,90 +1,77 @@
-import logoDark from "./logo-dark.svg";
-import logoLight from "./logo-light.svg";
+import { Link } from "react-router";
+import { r2Image } from "../utils/images";
+import type { BookWithPurchaseLinks } from "../types/db";
+import { Navbar } from "../components/Navbar";
+import { Footer } from "../components/Footer";
 
-export function Welcome({ message }: { message: string }) {
+export function Welcome({ message, books = [] }: { message: string; books?: BookWithPurchaseLinks[] }) {
+  const displayBooks = books.length > 0 ? books : [
+    { id: 0, name: "Book 1", image_url: r2Image("books/book-1.jpg"), description: null, created_at: "", updated_at: "", purchase_links: [] },
+    { id: 1, name: "Book 2", image_url: r2Image("books/book-2.jpg"), description: null, created_at: "", updated_at: "", purchase_links: [] },
+    { id: 2, name: "Book 3", image_url: r2Image("books/book-3.jpg"), description: null, created_at: "", updated_at: "", purchase_links: [] },
+    { id: 3, name: "Book 4", image_url: r2Image("books/book-4.jpg"), description: null, created_at: "", updated_at: "", purchase_links: [] },
+    { id: 4, name: "Book 5", image_url: r2Image("books/book-5.jpg"), description: null, created_at: "", updated_at: "", purchase_links: [] },
+    { id: 5, name: "Book 6", image_url: r2Image("books/book-6.jpg"), description: null, created_at: "", updated_at: "", purchase_links: [] },
+  ];
+
   return (
-    <main className="flex items-center justify-center pt-16 pb-4">
-      <div className="flex-1 flex flex-col items-center gap-16 min-h-0">
-        <header className="flex flex-col items-center gap-9">
-          <div className="w-[500px] max-w-[100vw] p-4">
-            <img
-              src={logoLight}
-              alt="React Router"
-              className="block w-full dark:hidden"
-            />
-            <img
-              src={logoDark}
-              alt="React Router"
-              className="hidden w-full dark:block"
-            />
+    <div>
+      <Navbar activePath="/" />
+
+      <section className="relative h-[520px] bg-center bg-cover" style={{
+        backgroundImage: `url('${r2Image("static_photos/home_background.jpg")}')`
+      }}>
+        <div className="absolute inset-0 bg-black/40" />
+        <div className="relative z-10 max-w-4xl mx-auto h-full flex items-center">
+          <div className="text-white space-y-6 pl-6 md:pl-0">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl tracking-tight drop-shadow-md w-full" style={{ lineHeight: 1.1 }}>
+              Let’s transport you to another time and place…
+            </h1>
+            <button className="bg-[#F3E3DD] text-[#0e2a48] px-12 py-6 rounded-full font-large text-2xl">view all books</button>
           </div>
-        </header>
-        <div className="max-w-[300px] w-full space-y-6 px-4">
-          <nav className="rounded-3xl border border-gray-200 p-6 dark:border-gray-700 space-y-4">
-            <p className="leading-6 text-gray-700 dark:text-gray-200 text-center">
-              What&apos;s next?
-            </p>
-            <ul>
-              {resources.map(({ href, text, icon }) => (
-                <li key={href}>
-                  <a
-                    className="group flex items-center gap-3 self-stretch p-3 leading-normal text-blue-700 hover:underline dark:text-blue-500"
-                    href={href}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {icon}
-                    {text}
-                  </a>
-                </li>
-              ))}
-              <li className="self-stretch p-3 leading-normal">{message}</li>
-            </ul>
-          </nav>
         </div>
-      </div>
-    </main>
+      </section>
+
+      <section className="bg-[#f1d9cf] pt-12 pb-20 relative">
+        <svg viewBox="0 0 1440 320" className="absolute left-0 bottom-0 w-full" preserveAspectRatio="none" style={{ height: 120 }}>
+          <path fill="#0e2a48" d="M0,224L60,240C120,256,240,288,360,272C480,256,600,192,720,181.3C840,171,960,213,1080,234.7C1200,256,1320,256,1380,240L1440,224L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z"></path>
+        </svg>
+        <div className="container mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-start relative z-10">
+          <div className="order-2 md:order-1 flex items-start md:items-center space-x-4 md:space-x-8">
+            <div className="text-blue-700 font-semibold leading-tight" style={{ writingMode: 'vertical-rl', textOrientation: 'upright' }}>
+              More great reads coming soon
+            </div>
+            <div className="flex-1 grid sm:grid-cols-2 md:grid-cols-3 gap-6 pt-6">
+              {displayBooks.map((b, idx) => (
+                <div key={b.id || idx} className="rounded shadow-md overflow-hidden bg-white">
+                  <img src={b.image_url} alt={b.name} style={{ width: '100%', height: 180, objectFit: 'cover' }} />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="order-1 md:order-2 flex items-center justify-center">
+            <button className="bg-blue-700 text-white px-6 py-3 rounded-full">Shop Now</button>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[#f4e6df] pt-20 pb-28">
+        <div className="container mx-auto px-6 grid md:grid-cols-12 gap-8 items-start">
+          <div className="md:col-span-5">
+            <p className="text-2xl md:text-3xl text-[#0e2a48]">Welcome to my adventures in writing.</p>
+          </div>
+          <div className="md:col-span-7">
+            <p className="text-gray-700 leading-relaxed">I write fantasy fiction for curious audiences who value friendship and respect in a variety of relationships. My quirky characters will lead you into adventure in contemporary and fantastical worlds. Through their eyes explore real life issues with a touch of humour and warmth and feel how their healing experiences unfold.</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white py-12 border-t border-gray-200 text-center text-sm text-gray-500">
+        <blockquote className="mx-auto max-w-3xl italic">"The characters in the book are amazing! The mix of personalities and acceptance of each other's differences is just wonderful. It will have you hooked from the first page. Can't wait for the next one to be available."</blockquote>
+        <div className="mt-4">— Jonh Doe. • A Verified Amazon Purchase of the Book</div>
+      </section>
+
+      <Footer />
+    </div>
   );
 }
-
-const resources = [
-  {
-    href: "https://reactrouter.com/docs",
-    text: "React Router Docs",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="20"
-        viewBox="0 0 20 20"
-        fill="none"
-        className="stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300"
-      >
-        <path
-          d="M9.99981 10.0751V9.99992M17.4688 17.4688C15.889 19.0485 11.2645 16.9853 7.13958 12.8604C3.01467 8.73546 0.951405 4.11091 2.53116 2.53116C4.11091 0.951405 8.73546 3.01467 12.8604 7.13958C16.9853 11.2645 19.0485 15.889 17.4688 17.4688ZM2.53132 17.4688C0.951566 15.8891 3.01483 11.2645 7.13974 7.13963C11.2647 3.01471 15.8892 0.951453 17.469 2.53121C19.0487 4.11096 16.9854 8.73551 12.8605 12.8604C8.73562 16.9853 4.11107 19.0486 2.53132 17.4688Z"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-      </svg>
-    ),
-  },
-  {
-    href: "https://rmx.as/discord",
-    text: "Join Discord",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="20"
-        viewBox="0 0 24 20"
-        fill="none"
-        className="stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300"
-      >
-        <path
-          d="M15.0686 1.25995L14.5477 1.17423L14.2913 1.63578C14.1754 1.84439 14.0545 2.08275 13.9422 2.31963C12.6461 2.16488 11.3406 2.16505 10.0445 2.32014C9.92822 2.08178 9.80478 1.84975 9.67412 1.62413L9.41449 1.17584L8.90333 1.25995C7.33547 1.51794 5.80717 1.99419 4.37748 2.66939L4.19 2.75793L4.07461 2.93019C1.23864 7.16437 0.46302 11.3053 0.838165 15.3924L0.868838 15.7266L1.13844 15.9264C2.81818 17.1714 4.68053 18.1233 6.68582 18.719L7.18892 18.8684L7.50166 18.4469C7.96179 17.8268 8.36504 17.1824 8.709 16.4944L8.71099 16.4904C10.8645 17.0471 13.128 17.0485 15.2821 16.4947C15.6261 17.1826 16.0293 17.8269 16.4892 18.4469L16.805 18.8725L17.3116 18.717C19.3056 18.105 21.1876 17.1751 22.8559 15.9238L23.1224 15.724L23.1528 15.3923C23.5873 10.6524 22.3579 6.53306 19.8947 2.90714L19.7759 2.73227L19.5833 2.64518C18.1437 1.99439 16.6386 1.51826 15.0686 1.25995ZM16.6074 10.7755L16.6074 10.7756C16.5934 11.6409 16.0212 12.1444 15.4783 12.1444C14.9297 12.1444 14.3493 11.6173 14.3493 10.7877C14.3493 9.94885 14.9378 9.41192 15.4783 9.41192C16.0471 9.41192 16.6209 9.93851 16.6074 10.7755ZM8.49373 12.1444C7.94513 12.1444 7.36471 11.6173 7.36471 10.7877C7.36471 9.94885 7.95323 9.41192 8.49373 9.41192C9.06038 9.41192 9.63892 9.93712 9.6417 10.7815C9.62517 11.6239 9.05462 12.1444 8.49373 12.1444Z"
-          strokeWidth="1.5"
-        />
-      </svg>
-    ),
-  },
-];

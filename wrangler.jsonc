@@ -8,11 +8,30 @@
 	"compatibility_date": "2025-04-04",
 	"main": "./workers/app.ts",
 	"vars": {
-		"VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare"
+		"VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare",
+		"R2_ACCOUNT_ID": "",
+		"R2_ACCESS_KEY_ID": "",
+		"R2_SECRET_ACCESS_KEY": "",
+		"R2_BUCKET_NAME": "",
+		"R2_ENDPOINT": ""
 	},
 	"observability": {
 		"enabled": true
-	}
+	},
+	"r2_buckets": [
+		{
+			"binding": "IMAGES_BUCKET",
+			"bucket_name": "author-website",
+			"remote": true
+		}
+	],
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "author-website-db",
+			"database_id": "placeholder-will-be-replaced"
+		}
+	]
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

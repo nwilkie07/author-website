@@ -1,13 +1,25 @@
-@import "tailwindcss" source(".");
+@import "tailwindcss";
 
-@theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+@font-face {
+  font-family: 'IvyMode';
+  src: url('/fonts/IvyMode.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: athelas, serif;
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/fonts/Athelas.woff2) format("woff2");
 }
 
 html,
 body {
   @apply bg-white dark:bg-gray-950;
+  font-family: 'IvyMode', 'Inter', ui-sans-serif, system-ui, sans-serif;
 
   @media (prefers-color-scheme: dark) {
     color-scheme: dark;
