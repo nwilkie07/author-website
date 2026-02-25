@@ -4,6 +4,8 @@ import type { BookWithPurchaseLinks, PageContent } from "../types/db";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 import { Carousel } from "../components/Carousel";
+import { MultiBookCarousel } from "../components/MultiBookCarousel";
+import { SkeletonImage, SkeletonLine, SkeletonGroup } from "../components/Skeleton";
 import { Modal } from "../components/Modal";
 import type { PurchaseLink } from "../types/db";
 import { useState } from "react";
@@ -69,14 +71,14 @@ export function Welcome({
           purchaseLinks={modalLinks}
           bookTitle={modalBookTitle}
         />
-      </section>
+        </section>
 
       <section className="bg-[#f3e3dd] pt-12 relative">
         <div className="container mx-auto px-6 relative z-10">
           <div className="flex flex-col gap-8 items-start">
             <div className="flex w-full justify-center">
-              {books.length > 0 ? (
-                <Carousel
+            {books.length > 0 ? (
+              <Carousel
                   items={carouselItems}
                   autoPlay={false}
                   showTitle={true}
@@ -86,8 +88,14 @@ export function Welcome({
                   onImageClick={handleImageClick}
                 />
               ) : (
-                <div className="text-center text-gray-500 py-20 bg-white rounded-lg">
-                  No books available. Add some books in the admin panel.
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full p-4">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="bg-white rounded shadow p-4 h-full flex flex-col items-center gap-4">
+                      <SkeletonImage height={180} width="100%" />
+                      <SkeletonLine height={14} width="60%" />
+                      <SkeletonLine height={10} width="80%" />
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

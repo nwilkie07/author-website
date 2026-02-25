@@ -2,6 +2,9 @@ import type { Route } from "../+types/admin.content";
 import { AdminNav } from "../../components/AdminNav";
 import { PageContentService } from "../../services/pageContent";
 import { useState, useMemo } from "react";
+import { SkeletonLine, SkeletonImage } from "../../components/Skeleton";
+import { LoadingWrapper } from "../../components/LoadingWrapper";
+import { sanitizeHTML } from "../../utils/sanitizeHTML";
 import type { PageContent } from "../../types/db";
 
 export async function loader({ context }: Route.LoaderArgs) {
@@ -21,7 +24,8 @@ export async function action({ request, context }: Route.ActionArgs) {
     case "create": {
       const page = formData.get("page") as string;
       const title = formData.get("title") as string;
-      const description = formData.get("description") as string | null;
+      const descriptionRaw = formData.get("description") as string | null;
+      const description = sanitizeHTML(descriptionRaw ?? "");
       const content = await contentService.createContent(page, title, description || undefined);
       return { success: true, content };
     }
@@ -29,7 +33,8 @@ export async function action({ request, context }: Route.ActionArgs) {
       const id = parseInt(formData.get("id") as string);
       const page = formData.get("page") as string;
       const title = formData.get("title") as string;
-      const description = formData.get("description") as string | null;
+      const descriptionRaw = formData.get("description") as string | null;
+      const description = sanitizeHTML(descriptionRaw ?? "");
       const content = await contentService.updateContent(id, page, title, description || undefined);
       return { success: true, content };
     }
@@ -109,14 +114,16 @@ export default function AdminContent({ loaderData }: Route.ComponentProps) {
       <AdminNav />
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Manage Page Content</h1>
-        {Object.entries(groupedContent).map(([page, items]) => (
-          <section key={page} className="mb-6">
-            <h2 className="text-xl font-semibold mb-2">{page}</h2>
-            {items.map((it) => (
-              <ContentEditorRow key={it.id} item={it} />
-            ))}
-          </section>
-        ))}
+        <LoadingWrapper isLoading={content.length === 0} variant="grid" skeletonCount={3}>
+          {Object.entries(groupedContent).map(([page, items]) => (
+            <section key={page} className="mb-6">
+              <h2 className="text-xl font-semibold mb-2">{page}</h2>
+              {items.length > 0 ? items.map((it) => (
+                <ContentEditorRow key={it.id} item={it} />
+              )) : null}
+            </section>
+          ))}
+        </LoadingWrapper>
 
         <section className="mt-8 p-4 bg-white rounded shadow-sm">
           <h3 className="text-lg font-semibold mb-2">Create New Content</h3>
