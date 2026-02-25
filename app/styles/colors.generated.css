@@ -1,0 +1,35 @@
+:root {
+  /* Light mode colors */
+  --color-bg: #fffdfb;
+  --color-bg-secondary: #fef7ed;
+  --color-bg-tertiary: #fffbf5;
+  --color-text: #521000;
+  --color-text-secondary: #521000b3;
+  --color-border: #ebd5c1;
+  --color-primary: #ff4801;
+  --color-primary-hover: #ff7038;
+  --color-danger: #fb2c36;
+  --color-danger-hover: #dc2626;
+  --color-success: #16a34a;
+  --color-black: #000;
+  --color-white: #fff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Dark mode overrides */
+    --color-bg: #1a1412;
+    --color-bg-secondary: #0f0c0a;
+    --color-bg-tertiary: #231c18;
+    --color-text: #ffeee6;
+    --color-text-secondary: #ffeee6b3;
+    --color-border: #3d2e24;
+    --color-primary: #ff6b33;
+    --color-primary-hover: #f85;
+    --color-danger: #ff4d55;
+    --color-danger-hover: #ef4444;
+    --color-success: #22c55e;
+  }
+  /* Focus shadows continue to use CSS vars if needed by components */
+  --shadow-focus-primary: 0 0 0 3px #ff6b3340;
+  --shadow-focus-danger: 0 0 0 3px #ff4d5540;
+}

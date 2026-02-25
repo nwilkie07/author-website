@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import { r2Image } from "../utils/images";
-import type { BookWithPurchaseLinks } from "../types/db";
+import type { BookWithPurchaseLinks, PageContent } from "../types/db";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 import { Carousel } from "../components/Carousel";
@@ -11,9 +11,11 @@ import { useState } from "react";
 export function Welcome({
   message,
   books = [],
+  pageContent = [],
 }: {
   message: string;
   books?: BookWithPurchaseLinks[];
+  pageContent?: PageContent[];
 }) {
   const carouselItems = books.map((book) => ({
     id: book.id,
@@ -26,7 +28,11 @@ export function Welcome({
   const [modalOpen, setModalOpen] = useState(false);
   const [modalLinks, setModalLinks] = useState<PurchaseLink[]>([]);
   const [modalBookTitle, setModalBookTitle] = useState<string>("");
-  const handleImageClick = (item: { imageUrl: string; title?: string; purchaseLinks?: PurchaseLink[] }) => {
+  const handleImageClick = (item: {
+    imageUrl: string;
+    title?: string;
+    purchaseLinks?: PurchaseLink[];
+  }) => {
     setModalLinks(item.purchaseLinks ?? []);
     setModalBookTitle(item.title ?? "");
     setModalOpen(true);
@@ -37,7 +43,7 @@ export function Welcome({
       <Navbar activePath="/" />
 
       <section
-        className="relative h-[520px] bg-center bg-cover"
+        className="relative h-[60vh] md:h-[520px] bg-center bg-cover"
         style={{
           backgroundImage: `url('${r2Image("static_photos/home_background.jpg")}')`,
         }}
@@ -65,18 +71,7 @@ export function Welcome({
         />
       </section>
 
-      <section className="bg-[#f1d9cf] pt-12 pb-20 relative">
-        <svg
-          viewBox="0 0 1440 320"
-          className="absolute left-0 bottom-0 w-full"
-          preserveAspectRatio="none"
-          style={{ height: 120 }}
-        >
-          <path
-            fill="#0e2a48"
-            d="M0,224L60,240C120,256,240,288,360,272C480,256,600,192,720,181.3C840,171,960,213,1080,234.7C1200,256,1320,256,1380,240L1440,224L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z"
-          ></path>
-        </svg>
+      <section className="bg-[#f3e3dd] pt-12 relative">
         <div className="container mx-auto px-6 relative z-10">
           <div className="flex flex-col gap-8 items-start">
             <div className="flex w-full justify-center">
@@ -109,45 +104,77 @@ export function Welcome({
             </div>
           </div>
         </div>
+        <img
+          src={r2Image("static_photos/footer_one.png")}
+          alt="profile"
+          className="w-full"
+        />
       </section>
 
-      <section className="bg-[#f4e6df] pt-20 pb-28">
+      <section className="bg-[#f3e3dd] pt-20 pb-16">
         <div className="flex flex-row px-8 items-center justify-center">
           <img
             src={r2Image("static_photos/profile.png")}
             alt="profile"
             className="w-[40%]"
           />
-          <div className="flex flex-col pl-24 gap-12">
-            <div className="flex w-fit h-fit text-5xl text-[#0e2a48] font-[IvyModeBold]">
-              Welcome to my adventures in writing.
+          {pageContent.length == 1 ? (
+            <div className="flex flex-col pl-24 gap-12">
+              <div className="flex w-fit h-fit text-5xl text-[#0e2a48] font-[IvyModeBold]">
+                {pageContent[0].title}
+              </div>
+              <div className="flex w-fit h-fit text-gray-700 leading-relaxed text-2xl font-[AthelasBook]">
+                {(() => {
+                  const raw = pageContent[0].description ?? "";
+                  let safe = raw;
+                  if (typeof window !== "undefined") {
+                    try {
+                      // @ts-ignore
+                      const lib = require("dompurify");
+                      const sanitizer =
+                        lib?.default?.sanitize ??
+                        lib?.sanitize ??
+                        ((html: string) => html);
+                      safe = sanitizer(raw);
+                    } catch {
+                      safe = raw;
+                    }
+                  }
+                  return (
+                    <div
+                      className="flex flex-col text-[#25384F] text-base md:text-xl leading-relaxed font-[AthelasBook] text-center md:text-left gap-8"
+                      dangerouslySetInnerHTML={{ __html: safe }}
+                    />
+                  );
+                })()}
+              </div>
+              <div>
+                <button className="bg-white text-[#426684] px-8 py-6 rounded-full font-large text-2xl font-[athelasbook]">
+                  about me
+                </button>
+              </div>
             </div>
-            <div className="flex w-fit h-fit text-gray-700 leading-relaxed text-2xl font-[AthelasBook]">
-              I write fantasy fiction for curious audiences who value friendship
-              and respect in a variety of relationships. My quirky characters
-              will lead you into adventure in contemporary and fantastical
-              worlds. Through their eyes explore real life issues with a touch
-              of humour and warmth and feel how their healing experiences
-              unfold.
-            </div>
-            <div>
-            <button className="bg-white text-[#426684] px-8 py-6 rounded-full font-large text-2xl font-[athelasbook]">
-              about me
-            </button>
-            </div>
-          </div>
+          ) : (
+            <div>Loading...</div>
+          )}
         </div>
       </section>
-
-      <section className="bg-white py-12 border-t border-gray-200 text-center text-sm text-[#426684] font-[IvyModeSemiBold]">
-        <blockquote className="mx-auto max-w-3xl text-2xl">
-          "The characters in the book are amazing! The mix of personalities and
-          acceptance of each other's differences is just wonderful. It will have
-          you hooked from the first page. Can't wait for the next one to be
-          available."
-        </blockquote>
-        <div className="mt-4">
-          — Jonh Doe. • A Verified Amazon Purchase of the Book
+      <section className="bg-white pb-12 border-t border-gray-200 text-center text-sm text-[#426684] font-[IvyModeSemiBold]">
+        <img
+          src={r2Image("static_photos/footer_two.png")}
+          alt="profile"
+          className="w-full"
+        />
+        <div className="relative top-[-50px]">
+          <blockquote className="mx-auto max-w-3xl text-2xl ">
+            "The characters in the book are amazing! The mix of personalities
+            and acceptance of each other's differences is just wonderful. It
+            will have you hooked from the first page. Can't wait for the next
+            one to be available."
+          </blockquote>
+          <div className="mt-4">
+            — Jonh Doe. • A Verified Amazon Purchase of the Book
+          </div>
         </div>
       </section>
 

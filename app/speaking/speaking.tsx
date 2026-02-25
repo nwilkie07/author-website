@@ -1,43 +1,63 @@
 import { Link } from "react-router";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
+import { r2Image } from "~/utils/images";
+import type { PageContent } from "~/types/db";
+// Client-side HTML sanitizer (optional: falls back to identity if lib not available)
 
-export default function Speaking() {
+export default function Speaking({
+  message,
+  pageContent = [],
+}: {
+  message: string;
+  pageContent?: PageContent[];
+}) {
   return (
     <div>
       <Navbar activePath="/speaking" authorName="Karen MacLeod-Wilkie" />
-
-      <section className="relative h-[420px] bg-center bg-cover" style={{
-        backgroundImage:
-          'url(https://images.unsplash.com/photo-1519681390361-3b2e7616e105?q=80&w=1400&auto=format&fit=crop)'
-      }}>
-        <div className="absolute inset-0 bg-black/30" />
-        <div className="relative z-10 container mx-auto h-full flex items-center">
-          <div className="w-full grid md:grid-cols-2 gap-8 items-center px-6 md:px-0">
-            <div>
-              <h1 className="text-4xl md:text-5xl text-white mb-6">Speaking engagements</h1>
-              <p className="text-white/90 leading-relaxed max-w-2xl">
-                For many years I have delighted audiences with conversations that blend storytelling, humor, and practical insights. I speak on faith, resilience, and personal growth, weaving in experiences from my writing journey.
-              </p>
-              <button className="mt-6 bg-white text-[#0e2a48] px-6 py-3 rounded-full">book me</button>
+      <div className="flex items-center h-48 md:h-[36rem] overflow-hidden">
+        <img
+          src={r2Image("static_photos/speaking_background.jpg")}
+          className="w-full h-full object-cover"
+        />
+      </div>
+      <div className="bg-white flex py-12">
+        {pageContent.length > 0 ? (
+          <div className="flex flex-col container mx-auto items-center py-8 px-4 md:px-24 gap-8 md:text-left">
+            <div className="text-2xl md:text-4xl text-[#426684] font-[IvyModeSemiBold] mb-6 text-left">
+              {pageContent[0].title}
             </div>
-            <div className="flex items-center justify-center">
-              <div className="w-64 h-64 rounded-full bg-white/10 border border-white/20" aria-label="decorative">
-                <img src="https://images.unsplash.com/photo-1523206489230-7a8fa5a2eae6?q=80&w=400&auto=format&fit=crop" alt="Speaker" className="w-full h-full object-cover rounded-full" />
-              </div>
-            </div>
+              {(() => {
+                const raw = pageContent[0].description ?? "";
+                let safe = raw;
+                if (typeof window !== "undefined") {
+                  try {
+                    // @ts-ignore
+                    const lib = require("dompurify");
+                    const sanitizer =
+                      lib?.default?.sanitize ??
+                      lib?.sanitize ??
+                      ((html: string) => html);
+                    safe = sanitizer(raw);
+                  } catch {
+                    safe = raw;
+                  }
+                }
+                return (
+                  <div
+                    className="flex flex-col text-[#25384F] text-base md:text-xl leading-relaxed font-[AthelasBook] text-center md:text-left gap-8"
+                    dangerouslySetInnerHTML={{ __html: safe }}
+                  />
+                );
+              })()}
+            <button className="bg-[#F3E3DD] text-[#0e2a48] px-12 py-6 rounded-full font-medium text-base md:text-xl">
+              book me
+            </button>
           </div>
-        </div>
-      </section>
-
-      <section className="bg-[#f1d9cf] py-16 text-center">
-        <div className="container mx-auto px-6">
-          <p className="text-lg text-gray-700 leading-relaxed max-w-3xl mx-auto">
-            Want me to speak at your event? I bring energy, storytelling, and practical insights to audiences of all ages.
-          </p>
-        </div>
-      </section>
-
+        ) : (
+          <div className="w-full text-center p-8">Loading...</div>
+        )}
+      </div>
       <Footer />
     </div>
   );

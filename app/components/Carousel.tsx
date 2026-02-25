@@ -130,10 +130,10 @@ export function Carousel({
       {(showTitle || showDescription) && (currentItem.title || currentItem.description) && (
         <div className="flex flex-col justify-center w-80 p-4">
           {showTitle && currentItem.title && (
-            <h3 className="text-[#0e2a48] text-2xl font-semibold mb-4">{currentItem.title}</h3>
+            <h3 className="text-[#0e2a48] text-2xl font-[IvyModeSemiBold] mb-4">{currentItem.title}</h3>
           )}
           {showDescription && currentItem.description && (
-            <p className="text-gray-700 text-sm leading-relaxed">{currentItem.description}</p>
+            <p className="text-gray-700 font-[athelasbook] text-sm leading-relaxed">{currentItem.description}</p>
           )}
         </div>
       )}

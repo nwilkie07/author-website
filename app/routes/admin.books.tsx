@@ -1,6 +1,7 @@
 import type { Route } from "./+types/admin.books";
 import { BooksService } from "../services/books";
 import type { Book, PurchaseLink } from "../types/db";
+import { AdminNav } from "../components/AdminNav";
 import { useState, useRef, useCallback } from "react";
 import { r2Image } from "../utils/images";
 
@@ -326,6 +327,7 @@ export default function AdminBooks({ loaderData }: Route.ComponentProps) {
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-6xl mx-auto">
+        <AdminNav />
         <h1 className="text-3xl font-bold mb-6">Manage Books</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">

@@ -21,6 +21,15 @@ export interface BookWithPurchaseLinks extends Book {
   purchase_links: PurchaseLink[];
 }
 
+export interface Testimonial {
+  id: number;
+  name: string;
+  description: string | null;
+  store: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface PageContent {
   id: number;
   page: string;
