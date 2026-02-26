@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import type { PurchaseLink } from "../types/db";
+import { r2Image } from "~/utils/images";
 
 interface ModalProps {
   isOpen: boolean;
@@ -10,6 +11,8 @@ interface ModalProps {
 }
 
 export function Modal({ isOpen, onClose, title, purchaseLinks, bookTitle }: ModalProps) {
+  const sortedLinks = purchaseLinks.sort((a, b) => a.store_name.localeCompare(b.store_name));
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -54,8 +57,8 @@ export function Modal({ isOpen, onClose, title, purchaseLinks, bookTitle }: Moda
         )}
 
         <div className="space-y-3">
-          {purchaseLinks.length > 0 ? (
-            purchaseLinks.map((link) => (
+          {sortedLinks.length > 0 ? (
+            sortedLinks.map((link) => (
               <a
                 key={link.id}
                 href={link.url}
@@ -65,7 +68,7 @@ export function Modal({ isOpen, onClose, title, purchaseLinks, bookTitle }: Moda
               >
                 {link.icon_url ? (
                   <img 
-                    src={link.icon_url} 
+                    src={r2Image(link.icon_url)} 
                     alt={link.store_name}
                     className="w-10 h-10 object-contain"
                   />

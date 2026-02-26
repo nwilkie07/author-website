@@ -6,8 +6,9 @@
     "app/**/.server/**/*",
     "app/**/.client/**/*",
     "workers/**/*",
-    "worker-configuration.d.ts"
-  ],
+    "worker-configuration.d.ts",
+    "app/routes/+types/**/*"
+, "postinstall.js"  ],
   "compilerOptions": {
     "composite": true,
     "strict": true,

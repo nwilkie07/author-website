@@ -4,8 +4,8 @@ export function AdminNav() {
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
   const tabs = [
     { to: "/admin/books", label: "Books" },
+    {to: "/admin/icons", label: "Icons"},
     { to: "/admin/content", label: "Content" },
-    { to: "/admin/purchase-links", label: "Purchase Links" },
     { to: "/admin/testimonials", label: "Testimonials" },
   ];
 

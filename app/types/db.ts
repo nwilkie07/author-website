@@ -2,6 +2,8 @@ export interface Book {
   id: number;
   name: string;
   description: string | null;
+  series_name: string | null;
+  series_number: number | null;
   image_url: string;
   created_at: string;
   updated_at: string;
