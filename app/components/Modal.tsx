@@ -35,7 +35,7 @@ export function Modal({ isOpen, onClose, title, purchaseLinks, bookTitle }: Moda
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       
       <div 
-        className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-8 transform transition-all"
+        className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-8 transform transition-all h-[70%]"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -56,7 +56,7 @@ export function Modal({ isOpen, onClose, title, purchaseLinks, bookTitle }: Moda
           <p className="text-gray-600 mb-6">{bookTitle}</p>
         )}
 
-        <div className="space-y-3">
+        <div className="space-y-3 h-[80%] overflow-auto scrollbar-color-grey">
           {sortedLinks.length > 0 ? (
             sortedLinks.map((link) => (
               <a

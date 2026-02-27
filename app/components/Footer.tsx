@@ -28,9 +28,9 @@ export function Footer({
             <div className="text-xl tracking-wide mb-4 text-white font-[athelasbook]">
               Sign up with your email address to receive news and updates.
             </div>
-            <form className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-2">
+            <form className="flex flex-col gap-4 justify-center items-center mt-2">
               <div className="flex flex-col gap-8">
-                <div className="flex gap-4">
+                <div className="flex md:flex-row flex-col gap-4">
                   <input
                     className="px-8 py-4 rounded bg-white"
                     placeholder="First Name"
@@ -45,7 +45,7 @@ export function Footer({
                   />
                 </div>
                 <div className="flex items-center justify-center gap-8 flex-col">
-                  <button className="bg-[#e3d2cb] text-black font-[athelasbook] px-8 py-4 rounded-full text-2xl">
+                  <button className="bg-[#e3d2cb] text-black font-[athelasbook] px-8 py-4 rounded-full text-2xl hover:underline hover:cursor-pointer">
                     Sign Up
                   </button>
                   <div className="text-l tracking-wide mb-4 text-white font-[athelasbook] w-fit">
@@ -68,7 +68,7 @@ export function Footer({
           </div>
           <div className="flex gap-6">
             {footerLinks.map((link) => (
-              <Link key={link.to} to={link.to} className="hover:underline">
+              <Link key={link.to} to={link.to} className="hover:underline hover:cursor-pointer">
                 {link.label}
               </Link>
             ))}

@@ -5,10 +5,16 @@ import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 import { Carousel } from "../components/Carousel";
 import { MultiBookCarousel } from "../components/MultiBookCarousel";
-import { SkeletonImage, SkeletonLine, SkeletonGroup } from "../components/Skeleton";
+import {
+  SkeletonImage,
+  SkeletonLine,
+  SkeletonGroup,
+} from "../components/Skeleton";
 import { Modal } from "../components/Modal";
 import type { PurchaseLink } from "../types/db";
 import { useState } from "react";
+import type { BookItem, SeriesGroup } from "~/routes/shop";
+import LoadingWrapper from "~/components/LoadingWrapper";
 
 export function Welcome({
   message,
@@ -40,28 +46,61 @@ export function Welcome({
     setModalOpen(true);
   };
 
+  const bookItems: BookItem[] = books.map((it) => ({
+    id: it.id,
+    name: it.name,
+    imageUrl: r2Image(it.image_url),
+    description: it.description,
+    seriesTitle: it.series_title,
+    seriesNumber: it.series_number,
+    purchaseLinks: it.purchase_links as PurchaseLink[],
+  }));
+
+  const seriesGroups: SeriesGroup[] = [];
+  const standaloneBooks: BookItem[] = [];
+
+  bookItems.forEach((book) => {
+    if (book.seriesTitle) {
+      const existing = seriesGroups.find((g) => g.title === book.seriesTitle);
+      if (existing) {
+        existing.books.push(book);
+      } else {
+        seriesGroups.push({ title: book.seriesTitle, books: [book] });
+      }
+    } else {
+      standaloneBooks.push(book);
+    }
+  });
+
+  seriesGroups.forEach((group) => {
+    group.books.sort((a, b) => (a.seriesNumber ?? 0) - (b.seriesNumber ?? 0));
+  });
+
+  seriesGroups.sort((a, b) => a.title.localeCompare(b.title));
+
   return (
     <div>
       <Navbar activePath="/" />
 
       <section
-        className="relative h-[60vh] md:h-[520px] bg-center bg-cover"
+        className="h-[60vh] md:h-[520px] bg-center bg-cover"
         style={{
           backgroundImage: `url('${r2Image("static_photos/home_background.jpg")}')`,
         }}
       >
-        <div className="absolute inset-0 bg-black/40" />
-        <div className="relative z-10 max-w-4xl mx-auto h-full flex items-center">
-          <div className="text-white space-y-6 pl-6 md:pl-0">
+        <div className="flex w-full mx-auto h-full flex items-center justify-center">
+          <div className="flex flex-col w-[80%] text-white space-y-6 pl-6 md:pl-0">
             <h1
-              className="text-4xl md:text-5xl lg:text-6xl tracking-tight drop-shadow-md w-full"
+              className="text-4xl md:text-5xl lg:text-6xl tracking-tight drop-shadow-md w-full font-[IvyMode]"
               style={{ lineHeight: 1.1 }}
             >
               Let’s transport you to another time and place…
             </h1>
-            <button className="bg-[#F3E3DD] text-[#0e2a48] px-12 py-6 rounded-full font-large text-2xl">
+            <Link to="/shop">
+            <button className="bg-[#F3E3DD] text-[#0e2a48] px-12 py-6 rounded-full font-large text-xl lg:text-2xl hover:underline hover:cursor-pointer">
               view all books
             </button>
+            </Link>
           </div>
         </div>
         <Modal
@@ -71,47 +110,49 @@ export function Welcome({
           purchaseLinks={modalLinks}
           bookTitle={modalBookTitle}
         />
-        </section>
+      </section>
 
       <section className="bg-[#f3e3dd] pt-12 relative">
-        <div className="container mx-auto px-6 relative z-10">
-          <div className="flex flex-col gap-8 items-start">
-            <div className="flex w-full justify-center">
-            {books.length > 0 ? (
-              <Carousel
-                  items={carouselItems}
-                  autoPlay={false}
-                  showTitle={true}
-                  showDescription={true}
-                  imageHeight="500px"
-                  className="shadow-xl"
-                  onImageClick={handleImageClick}
-                />
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full p-4">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="bg-white rounded shadow p-4 h-full flex flex-col items-center gap-4">
-                      <SkeletonImage height={180} width="100%" />
-                      <SkeletonLine height={14} width="60%" />
-                      <SkeletonLine height={10} width="80%" />
+        <div className="flex flex-col">
+          <LoadingWrapper
+            isLoading={books.length === 0}
+            variant="grid"
+            skeletonCount={3}
+          >
+            {seriesGroups.length > 0 &&
+              seriesGroups.map(({ title, books }) => {
+                return (
+                  <div className="pb-6">
+                    <div className="flex w-full justify-center align-center">
+                      <div className="bg-white text-[#25384F] font-[IvyModeSemiBold] text-2xl rounded-lg p-4 mx-8 w-[70%] text-center">
+                        {title}
+                      </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="flex flex-col items-center justify-center space-y-4 w-full">
-              <div className="text-blue-700 font-semibold leading-tight text-center">
-                More great reads coming soon
-              </div>
-              <Link
-                to="/shop"
-                className="bg-[#0e2a48] text-white px-8 py-3 rounded-full hover:bg-[#1a3a58] transition-colors"
-              >
-                Shop Now
-              </Link>
-            </div>
-          </div>
+                    <MultiBookCarousel
+                      containerClassName="px-8"
+                      onImageClick={handleImageClick}
+                      items={books.map((it) => ({
+                        id: it.id,
+                        imageUrl: it.imageUrl,
+                        title: it.name,
+                        description: it.description ?? "",
+                        seriesNumber: it.seriesNumber,
+                        seriesTitle: it.seriesTitle,
+                        purchaseLinks: it.purchaseLinks,
+                      }))}
+                    />
+                  </div>
+                );
+              })}
+          </LoadingWrapper>
         </div>
+        <Modal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          title="Purchase Links"
+          purchaseLinks={modalLinks}
+          bookTitle={modalBookTitle}
+        />
         <img
           src={r2Image("static_photos/footer_one.png")}
           alt="profile"
@@ -120,14 +161,14 @@ export function Welcome({
       </section>
 
       <section className="bg-[#f3e3dd] pt-20 pb-16">
-        <div className="flex flex-row px-8 items-center justify-center">
+        <div className="flex flex-col md:flex-row px-8 items-center justify-center">
           <img
             src={r2Image("static_photos/profile.png")}
             alt="profile"
             className="w-[40%]"
           />
           {pageContent.length == 1 ? (
-            <div className="flex flex-col pl-24 gap-12">
+            <div className="flex flex-col px-12 md:pl-24 md:gap-12 gap-8 items-center md:items-start md:items-left text-center md:text-start">
               <div className="flex w-fit h-fit text-5xl text-[#0e2a48] font-[IvyModeBold]">
                 {pageContent[0].title}
               </div>
@@ -157,9 +198,11 @@ export function Welcome({
                 })()}
               </div>
               <div>
-                <button className="bg-white text-[#426684] px-8 py-6 rounded-full font-large text-2xl font-[athelasbook]">
-                  about me
-                </button>
+                <Link to="/about">
+                  <button className="bg-white text-[#426684] px-8 py-6 rounded-full font-large text-2xl font-[athelasbook] hover:underline hover:cursor-pointer">
+                    about me
+                  </button>
+                </Link>
               </div>
             </div>
           ) : (

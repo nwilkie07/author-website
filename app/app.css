@@ -41,6 +41,16 @@
   src: url(/fonts/AthelasBook.woff2) format("woff2");
 }
 
+/* Track */
+::-webkit-scrollbar-track {
+    background: black;
+}
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 5px;
+}
+
 html,
 body {
   @apply bg-white dark:bg-gray-950;

@@ -1,7 +1,8 @@
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 
 export function AdminNav() {
-  const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+  const location = useLocation();
+  const currentPath = location.pathname;
   const tabs = [
     { to: "/admin/books", label: "Books" },
     {to: "/admin/icons", label: "Icons"},

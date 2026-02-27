@@ -65,11 +65,11 @@ export class BooksService {
     return booksWithLinks;
   }
 
-  async createBook(name: string, imageUrl: string, description?: string): Promise<Book> {
+  async createBook(name: string, imageUrl: string, description?: string, seriesTitle?: string | null, seriesNumber?: number | null): Promise<Book> {
     await this.ensureTables();
     const result = await this.db
-      .prepare("INSERT INTO books (name, image_url, description) VALUES (?, ?, ?) RETURNING *")
-      .bind(name, imageUrl, description || null)
+      .prepare("INSERT INTO books (name, image_url, description, series_title, series_number) VALUES (?, ?, ?, ?, ?) RETURNING *")
+      .bind(name, imageUrl, description || null, seriesTitle ?? null, seriesNumber ?? null)
       .first<Book>();
     
     if (!result) {
@@ -78,11 +78,11 @@ export class BooksService {
     return result;
   }
 
-  async updateBook(id: number, name: string, imageUrl: string, description?: string): Promise<Book | null> {
+  async updateBook(id: number, name: string, imageUrl: string, description?: string, seriesTitle?: string | null, seriesNumber?: number | null): Promise<Book | null> {
     await this.ensureTables();
     const result = await this.db
-      .prepare("UPDATE books SET name = ?, image_url = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? RETURNING *")
-      .bind(name, imageUrl, description || null, id)
+      .prepare("UPDATE books SET name = ?, image_url = ?, description = ?, series_title = ?, series_number = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? RETURNING *")
+      .bind(name, imageUrl, description || null, seriesTitle ?? null, seriesNumber ?? null, id)
       .first<Book>();
     
     return result;

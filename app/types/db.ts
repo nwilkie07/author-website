@@ -2,7 +2,7 @@ export interface Book {
   id: number;
   name: string;
   description: string | null;
-  series_name: string | null;
+  series_title: string | null;
   series_number: number | null;
   image_url: string;
   created_at: string;
@@ -15,6 +15,7 @@ export interface PurchaseLink {
   store_name: string;
   url: string;
   icon_url: string | null;
+  media_type: string | null;
   created_at: string;
   updated_at: string;
 }

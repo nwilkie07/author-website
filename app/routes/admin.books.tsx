@@ -72,12 +72,20 @@ export async function action({ request, context }: Route.ActionArgs) {
     }
     case "create-book": {
       const name = formData.get("name") as string;
-      const imageUrl = formData.get("imageUrl") as string;
+      let imageUrl = formData.get("imageUrl") as string;
+      // If no image was uploaded, use a default placeholder
+      if (!imageUrl) {
+        imageUrl = "book_covers/placeholder.jpg";
+      }
       const description = formData.get("description") as string | null;
+      const seriesTitle = formData.get("seriesTitle") as string | null;
+      const seriesNumber = formData.get("seriesNumber") as string | null;
       const book = await booksService.createBook(
         name,
         imageUrl,
         description || undefined,
+        seriesTitle || null,
+        seriesNumber ? parseInt(seriesNumber) : null,
       );
       return { success: true, book };
     }
@@ -86,11 +94,15 @@ export async function action({ request, context }: Route.ActionArgs) {
       const name = formData.get("name") as string;
       const imageUrl = formData.get("imageUrl") as string;
       const description = formData.get("description") as string | null;
+      const seriesTitle = formData.get("seriesTitle") as string | null;
+      const seriesNumber = formData.get("seriesNumber") as string | null;
       const book = await booksService.updateBook(
         id,
         name,
         imageUrl,
         description || undefined,
+        seriesTitle || null,
+        seriesNumber ? parseInt(seriesNumber) : null,
       );
       return { success: true, book };
     }
@@ -170,15 +182,17 @@ function ImageUpload({
         imageUrl?: string;
         error?: string;
       };
+      console.log("test")
+      console.log(result)
 
       if (result.success && result.imageUrl) {
         onImageUrlChange(result.imageUrl);
         setPreview(null);
       } else {
-        alert(result.error || "Upload failed");
+        alert(result);
       }
     } catch (error) {
-      alert("Upload failed");
+      alert("Upload Failed");
     } finally {
       setIsUploading(false);
     }
@@ -277,13 +291,15 @@ function BookForm({ book, onCancel }: { book?: Book; onCancel?: () => void }) {
   const [imageUrl, setImageUrl] = useState(book?.image_url || "");
   const [dragPreview, setDragPreview] = useState<string | null>(null);
   const [bookName, setBookName] = useState<string | null>(book?.name || null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [seriesTitle, setSeriesName] = useState(book?.series_title || "");
+  const [seriesNumber, setSeriesNumber] = useState(book?.series_number?.toString() || "");
 
-  // When a file is uploaded via the drag/drop component, upload to server
-  const handleFileSelected = async (file: File) => {
+  const uploadImage = async (file: File): Promise<string | null> => {
     const formData = new FormData();
     formData.append("intent", "upload-image");
     formData.append("file", file);
-    // Include book name (if available) so the server can name the image accordingly
     const nameInput = document.querySelector(
       'input[name="name"]',
     ) as HTMLInputElement | null;
@@ -295,33 +311,78 @@ function BookForm({ book, onCancel }: { book?: Book; onCancel?: () => void }) {
         method: "POST",
         body: formData,
       });
-      const result = (await response.json()) as {
-        success: boolean;
-        imageUrl?: string;
-        error?: string;
-      };
-      console.debug("upload-image response:", result);
-      if (result?.success) {
-        if (result.imageUrl) {
-          setImageUrl(result.imageUrl);
-          setDragPreview(null);
-        } else {
-          // Upload reported success but no imageUrl returned
-          console.warn("Upload reported success but no imageUrl returned");
-        }
+      let result: { success: boolean; imageUrl?: string; error?: string } | undefined;
+      try {
+        result = (await response.json()) as {
+          success: boolean;
+          imageUrl?: string;
+          error?: string;
+        };
+      } catch {
+        alert("Upload failed - could not parse server response");
+        return null;
+      }
+      if (result?.success && result.imageUrl) {
+        return result.imageUrl;
       } else {
         alert(result?.error || "Upload failed");
+        return null;
       }
     } catch {
       alert("Upload failed");
+      return null;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsUploading(true);
+
+    let finalImageUrl = imageUrl;
+
+    if (selectedFile) {
+      const uploadedUrl = await uploadImage(selectedFile);
+      if (uploadedUrl) {
+        finalImageUrl = uploadedUrl;
+      }
+    }
+
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    formData.set("intent", intent);
+    formData.set("imageUrl", finalImageUrl);
+
+    try {
+      const response = await fetch(window.location.pathname, {
+        method: "POST",
+        body: formData,
+      });
+      let result: { success: boolean; error?: string } | undefined;
+      try {
+        result = (await response.json()) as { success: boolean; error?: string };
+      } catch {
+        alert("Failed to save book - could not parse server response");
+        return;
+      }
+      if (result?.success) {
+        window.location.reload();
+      } else {
+        alert(result?.error || "Failed to save book");
+      }
+    } catch {
+      alert("Failed to save book");
+    } finally {
+      setIsUploading(false);
     }
   };
 
   return (
-    <form method="post" className="space-y-4" encType="multipart/form-data">
+    <form method="post" className="space-y-4" encType="multipart/form-data" onSubmit={handleSubmit}>
       <input type="hidden" name="intent" value={intent} />
       {book && <input type="hidden" name="id" value={book.id} />}
       <input type="hidden" name="imageUrl" value={imageUrl} />
+      <input type="hidden" name="seriesTitle" value={seriesTitle} />
+      <input type="hidden" name="seriesNumber" value={seriesNumber} />
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -346,7 +407,7 @@ function BookForm({ book, onCancel }: { book?: Book; onCancel?: () => void }) {
             );
             return;
           }
-          handleFileSelected(file);
+          setSelectedFile(file);
         }}
         onPreviewChange={(src) => {
           if (!bookName) {
@@ -385,12 +446,43 @@ function BookForm({ book, onCancel }: { book?: Book; onCancel?: () => void }) {
         />
       </div>
 
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Series Name
+          </label>
+          <input
+            type="text"
+            name="seriesTitle"
+            value={seriesTitle}
+            onChange={(e) => setSeriesName(e.currentTarget.value)}
+            className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
+            placeholder="e.g. The XYZ Series"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Book Number
+          </label>
+          <input
+            type="number"
+            name="seriesNumber"
+            value={seriesNumber}
+            onChange={(e) => setSeriesNumber(e.currentTarget.value)}
+            className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
+            placeholder="e.g. 1"
+            min="1"
+          />
+        </div>
+      </div>
+
       <div className="flex gap-2">
         <button
           type="submit"
-          className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          disabled={isUploading}
+          className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {book ? "Update Book" : "Add Book"}
+          {isUploading ? "Saving..." : book ? "Update Book" : "Add Book"}
         </button>
         {onCancel && (
           <button
@@ -417,11 +509,52 @@ function PurchaseLinkForm({
   icons?: { key: string; name: string }[];
   onCancel?: () => void;
 }) {
-  console.log(icons)
   const intent = link ? "update-purchase-link" : "create-purchase-link";
   const [iconUrl, setIconUrl] = useState<string>(link?.icon_url ?? "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [storeName, setStoreName] = useState<string>(link?.store_name || "");
+  const handleSubmit = async (e: any) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const form = e.currentTarget as HTMLFormElement;
+      const formData = new FormData(form);
+      const resp = await fetch(window.location.pathname, {
+        method: "POST",
+        body: formData,
+      });
+      let result:
+        | { success: boolean; error?: string; key?: string }
+        | undefined;
+      try {
+        result = (await resp.json()) as {
+          success: boolean;
+          error?: string;
+          key?: string;
+        };
+      } catch {
+        if (resp.ok) {
+          window.location.reload();
+          return;
+        }
+        alert("Upload failed");
+        return;
+      }
+      if (result?.success) {
+        window.location.reload();
+      } else {
+        alert(result?.error || "Upload failed");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   return (
-    <form method="post" className="flex flex-wrap gap-2 items-center">
+    <form
+      method="post"
+      className="flex flex-wrap gap-2 items-center"
+      onSubmit={handleSubmit}
+    >
       <input type="hidden" name="intent" value={intent} />
       {link && <input type="hidden" name="id" value={link.id} />}
       <input type="hidden" name="bookId" value={bookId} />
@@ -430,7 +563,8 @@ function PurchaseLinkForm({
         name="storeName"
         placeholder="Store name"
         required
-        defaultValue={link?.store_name || ""}
+        value={storeName}
+        onChange={(e) => setStoreName(e.currentTarget.value)}
         className="border rounded px-3 py-1 text-sm text-black"
       />
       <input
@@ -445,7 +579,9 @@ function PurchaseLinkForm({
       <select
         name="iconUrl"
         value={iconUrl}
-        onChange={(e) => setIconUrl(e.target.value)}
+        onChange={(e) => {
+          setIconUrl(e.target.value);
+        }}
         className="border rounded px-3 py-1 text-sm text-black"
       >
         <option value="">None</option>
@@ -460,6 +596,9 @@ function PurchaseLinkForm({
         className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 text-black"
       >
         {link ? "Update" : "Add"}
+        {isSubmitting && (
+          <span className="ml-2 inline-block w-4 h-4 border-2 border-white border-t-transparent border-l-transparent rounded-full animate-spin" />
+        )}
       </button>
       {onCancel && (
         <button
@@ -475,15 +614,31 @@ function PurchaseLinkForm({
 }
 
 export default function AdminBooks({ loaderData }: Route.ComponentProps) {
-  const { books, icons } = loaderData;
+  const { books: initialBooks, icons } = (loaderData as any) || {
+    books: [],
+    icons: [],
+  };
+  const [books, setBooks] = useState<any[]>(initialBooks);
   const [editingBookId, setEditingBookId] = useState<number | null>(null);
   const [editingLinkId, setEditingLinkId] = useState<number | null>(null);
 
+  // Refresh books data from API
+  const refreshBooks = async () => {
+    try {
+      const resp = await fetch("/api/books");
+      if (!resp.ok) return;
+      const data = (await resp.json()) as any;
+      setBooks(data?.books ?? []);
+    } catch {
+      // ignore
+    }
+  };
+
   const filteredIcons = icons.filter((icon) => {
     if (icon.key !== "icons/") {
-      return icon
+      return icon;
     }
-  })
+  });
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
@@ -519,7 +674,9 @@ export default function AdminBooks({ loaderData }: Route.ComponentProps) {
                     />
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold">{book.name}</h3>
+                        <h3 className="text-lg font-semibold text-black">
+                          {book.name}
+                        </h3>
                         <div className="flex gap-2">
                           <button
                             className="text-blue-600 hover:text-blue-800 text-sm font-medium"
@@ -553,12 +710,18 @@ export default function AdminBooks({ loaderData }: Route.ComponentProps) {
                       <p className="text-sm text-gray-600 mt-1">
                         {book.description}
                       </p>
+                      {(book.series_name || book.series_number) && (
+                        <p className="text-sm text-gray-500 mt-1">
+                          {book.series_name && <span>{book.series_name}</span>}
+                          {book.series_number && <span> #{book.series_number}</span>}
+                        </p>
+                      )}
                       <div className="mt-3">
                         <h4 className="text-sm font-medium mb-2">
                           Purchase Links
                         </h4>
                         <div className="flex flex-wrap gap-2 items-center">
-                          {book.purchase_links.map((link: any) => (
+                          {book.purchase_links.map((link: any) =>
                             editingLinkId === link.id ? (
                               <PurchaseLinkForm
                                 key={link.id}
@@ -568,7 +731,10 @@ export default function AdminBooks({ loaderData }: Route.ComponentProps) {
                                 onCancel={() => setEditingLinkId(null)}
                               />
                             ) : (
-                              <div key={link.id} className="inline-flex items-center gap-2 px-2 py-1 bg-gray-100 rounded text-xs">
+                              <div
+                                key={link.id}
+                                className="inline-flex items-center gap-2 px-2 py-1 bg-gray-100 rounded text-xs"
+                              >
                                 <a
                                   href={link.url}
                                   target="_blank"
@@ -576,25 +742,41 @@ export default function AdminBooks({ loaderData }: Route.ComponentProps) {
                                   className="inline-flex items-center gap-1 text-black"
                                 >
                                   {link.icon_url && (
-                                    <img src={r2Image(link.icon_url)} alt="" className="w-3 h-3" />
+                                    <img
+                                      src={r2Image(link.icon_url)}
+                                      alt=""
+                                      className="w-3 h-3"
+                                    />
                                   )}
                                   {link.store_name}
                                 </a>
                                 <button
                                   type="button"
-                                  className="text-blue-600 hover:text-blue-800"
+                                  className="text-blue-600 hover:text-blue-800 ml-1"
                                   onClick={() => setEditingLinkId(link.id)}
                                 >
                                   Edit
                                 </button>
+                                <form method="post" className="inline ml-1" onSubmit={(e) => { if (!confirm("Delete this purchase link?")) e.preventDefault(); }}>
+                                  <input type="hidden" name="intent" value="delete-purchase-link" />
+                                  <input type="hidden" name="id" value={link.id} />
+                                  <button type="submit" className="text-red-600 hover:text-red-800">
+                                    Delete
+                                  </button>
+                                </form>
                               </div>
-                            )
-                          ))}
+                            ),
+                          )}
                         </div>
                         {editingLinkId === null && (
                           <div className="mt-3">
-                            <h5 className="text-sm font-medium mb-2">Add Purchase Link</h5>
-                            <PurchaseLinkForm bookId={book.id} icons={filteredIcons} />
+                            <h5 className="text-sm font-medium mb-2">
+                              Add Purchase Link
+                            </h5>
+                            <PurchaseLinkForm
+                              bookId={book.id}
+                              icons={filteredIcons}
+                            />
                           </div>
                         )}
                       </div>
