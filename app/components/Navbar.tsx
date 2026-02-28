@@ -3,13 +3,14 @@ import { useState } from "react";
 import { r2Image } from "~/utils/images";
 
 type NavbarProps = {
-  activePath?: "/" | "/about" | "/speaking" | "/contact" | "/shop";
+  activePath?: "/" | "/about" | "/emails" | "/speaking" | "/contact" | "/shop";
   authorName?: string;
 };
 
 const navLinks = [
   { to: "/", label: "Home" },
   { to: "/about", label: "About Me" },
+  { to: "/emails", label: "Newsletters" },
   { to: "/speaking", label: "Speaking" },
   { to: "/contact", label: "Contact" },
 ] as const;
