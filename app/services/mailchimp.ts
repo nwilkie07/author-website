@@ -166,4 +166,28 @@ export class MailchimpService {
     globalCache.delete(cacheKey);
     return this.getCampaignContent(campaignId);
   }
+
+  async subscribe(listId: string, email: string, firstName: string, lastName: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const data = await this.fetchMailchimp(`/lists/${listId}/members`, {
+        method: "POST",
+        body: JSON.stringify({
+          email_address: email,
+          status: "subscribed",
+          merge_fields: {
+            FNAME: firstName,
+            LNAME: lastName,
+          },
+        }),
+      });
+
+      return { success: true };
+    } catch (error: any) {
+      if (error.message && error.message.includes("already a list member")) {
+        return { success: false, error: "This email is already subscribed" };
+      }
+      console.error("Failed to subscribe:", error);
+      return { success: false, error: error.message || "Failed to subscribe" };
+    }
+  }
 }

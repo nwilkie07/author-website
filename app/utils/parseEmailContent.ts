@@ -21,9 +21,35 @@ export function parseMailchimpContent(html: string): ParsedEmailContent {
   }
 
   let title = "";
-  const titleMatch = html.match(/<h1[^>]*>([^<]+)<\/h1>/i);
-  if (titleMatch) {
-    title = titleMatch[1].trim();
+  let body = "";
+
+  const textContentMatches = html.match(/<td[^>]*class=["']mcnTextContent["'][^>]*>([\s\S]*?)<\/td>/gi);
+  if (textContentMatches && textContentMatches.length > 0) {
+    const firstContent = textContentMatches[0];
+    
+    const h1Match = firstContent.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+    if (h1Match) {
+      title = h1Match[1].replace(/<[^>]+>/g, "").trim();
+    }
+    
+    const pMatches = firstContent.match(/<p[^>]*>([\s\S]*?)<\/p>/gi);
+    if (pMatches && pMatches.length > 0) {
+      const textParts: string[] = [];
+      for (const p of pMatches) {
+        const text = p.replace(/<[^>]+>/g, "").trim();
+        if (text && text.length > 0) {
+          textParts.push(text);
+        }
+      }
+      body = textParts.slice(0, 2).join(" ");
+    }
+  }
+
+  if (!title) {
+    const titleMatch = html.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+    if (titleMatch) {
+      title = titleMatch[1].trim();
+    }
   }
   
   if (!title) {
@@ -33,26 +59,27 @@ export function parseMailchimpContent(html: string): ParsedEmailContent {
     }
   }
 
-  let body = html;
-  
-  const templateHeaderMatch = body.match(/<!--\s*templateHeader\s*-->[\s\S]*?<!--\s*\/templateHeader\s*-->/i);
-  if (templateHeaderMatch) {
-    body = body.replace(templateHeaderMatch[0], "");
+  if (!body) {
+    let bodyHtml = html;
+    
+    const templateHeaderMatch = bodyHtml.match(/<!--\s*templateHeader\s*-->[\s\S]*?<!--\s*\/templateHeader\s*-->/i);
+    if (templateHeaderMatch) {
+      bodyHtml = bodyHtml.replace(templateHeaderMatch[0], "");
+    }
+    
+    const templateFooterMatch = bodyHtml.match(/<!--\s*templateFooter\s*-->[\s\S]*?<!--\s*\/templateFooter\s*-->/i);
+    if (templateFooterMatch) {
+      bodyHtml = bodyHtml.replace(templateFooterMatch[0], "");
+    }
+    
+    const canspamMatch = bodyHtml.match(/<!--\s*canspamBarWrapper\s*-->[\s\S]*?<!--\s*\/canspamBarWrapper\s*-->/i);
+    if (canspamMatch) {
+      bodyHtml = bodyHtml.replace(canspamMatch[0], "");
+    }
+    
+    bodyHtml = bodyHtml.replace(/<html[^>]*>|<\/html>|<head[^>]*>[\s\S]*?<\/head>|<body[^>]*>|<\/body>/gi, "");
+    body = bodyHtml.trim();
   }
-  
-  const templateFooterMatch = body.match(/<!--\s*templateFooter\s*-->[\s\S]*?<!--\s*\/templateFooter\s*-->/i);
-  if (templateFooterMatch) {
-    body = body.replace(templateFooterMatch[0], "");
-  }
-  
-  const canspamMatch = body.match(/<!--\s*canspamBarWrapper\s*-->[\s\S]*?<!--\s*\/canspamBarWrapper\s*-->/i);
-  if (canspamMatch) {
-    body = body.replace(canspamMatch[0], "");
-  }
-  
-  body = body.replace(/<html[^>]*>|<\/html>|<head[^>]*>[\s\S]*?<\/head>|<body[^>]*>|<\/body>/gi, "");
-  
-  body = body.trim();
 
   return { title, body, media };
 }

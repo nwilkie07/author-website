@@ -5,16 +5,15 @@ import {
 } from "../services/mailchimp";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
-import { useState, useEffect } from "react";
-import { parseMailchimpContent } from "~/utils/parseEmailContent";
-
+import { useState } from "react";
 
 function sanitizeHtml(html: string): string {
   if (typeof window === "undefined") return html;
   try {
     // @ts-ignore
     const lib = require("dompurify");
-    const sanitizer = lib?.default?.sanitize ?? lib?.sanitize ?? ((s: string) => s);
+    const sanitizer =
+      lib?.default?.sanitize ?? lib?.sanitize ?? ((s: string) => s);
     return sanitizer(html);
   } catch {
     return html;
@@ -41,14 +40,62 @@ export async function loader({ context }: Route.LoaderArgs) {
     return { campaigns: [], error: "Mailchimp API key not configured" };
   }
 
+  function extractMcnTextContent(html: string): string[] {
+    const results: string[] = [];
+    const regex =
+      /<[^>]*class="[^"]*mcnTextContent[^"]*"[^>]*>([\s\S]*?)<\/[^>]*>/gi;
+    let match;
+    while ((match = regex.exec(html)) !== null) {
+      results.push(match[1]);
+    }
+    return results;
+  }
+
   try {
     const mailchimp = new MailchimpService(apiKey);
     const campaigns = await mailchimp.getCampaigns();
-    return { campaigns, error: null };
+
+    const campaignsWithContent = await Promise.all(
+      campaigns.map(async (campaign) => {
+        try {
+          const content = await mailchimp.getCampaignContent(campaign.id);
+          if (content) {
+            const parsed = extractMcnTextContent(content);
+            return {
+              ...campaign,
+              parsedContent: parsed,
+              originalContent: content,
+            };
+          }
+        } catch (e) {
+          console.error("Failed to parse campaign content:", campaign.id, e);
+        }
+        return { ...campaign, parsedContent: null, originalContent: null };
+      }),
+    );
+
+    return { campaigns: campaignsWithContent, error: null };
   } catch (error) {
     console.error("Failed to fetch campaigns:", error);
     return { campaigns: [], error: "Failed to fetch campaigns" };
   }
+}
+
+type CampaignWithContent = MailchimpCampaign & {
+  parsedContent: string[] | null;
+  originalContent: string | null;
+};
+
+function stripHtml(html: string): string {
+  return html
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/<[^>]*>/g, "")
+    .trim();
 }
 
 function EmailModal({
@@ -56,40 +103,11 @@ function EmailModal({
   isOpen,
   onClose,
 }: {
-  campaign: MailchimpCampaign;
+  campaign: CampaignWithContent;
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const [content, setContent] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!isOpen || content) return;
-
-    const loadContent = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch(
-          `/api/email?campaignId=${encodeURIComponent(campaign.id)}`,
-        );
-        const data: { error?: string; content?: string } =
-          await response.json();
-
-        if (data.error) {
-          console.error("Failed to load email:", data.error);
-          return;
-        }
-
-        setContent(sanitizeHtml(data.content || ""));
-      } catch (error) {
-        console.error("Failed to load email content:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadContent();
-  }, [isOpen, campaign.id]);
+  const content = campaign.originalContent;
 
   if (!isOpen) return null;
 
@@ -104,14 +122,14 @@ function EmailModal({
       >
         <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
           <div>
-            <h2 className="text-xl font-bold text-[#25384F]">
+            <p className="text-sm text-gray-500">
               {campaign.send_time
                 ? new Date(campaign.send_time).toLocaleDateString(
                     [],
                     dateOptions,
                   ) + " Newsletter"
-                : "Draft"}
-            </h2>
+                : campaign.status}
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -121,15 +139,10 @@ function EmailModal({
           </button>
         </div>
         <div className="p-6">
-          {loading && (
-            <div className="text-center py-8 text-gray-500">
-              Loading content...
-            </div>
-          )}
           {content && (
             <div
               className="email-content prose max-w-none"
-              dangerouslySetInnerHTML={{ __html: content }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }}
             />
           )}
         </div>
@@ -140,11 +153,11 @@ function EmailModal({
 
 export default function Emails({ loaderData }: Route.ComponentProps) {
   const { campaigns, error } = (loaderData as {
-    campaigns: MailchimpCampaign[];
+    campaigns: CampaignWithContent[];
     error: string | null;
   }) || { campaigns: [], error: null };
   const [selectedCampaign, setSelectedCampaign] =
-    useState<MailchimpCampaign | null>(null);
+    useState<CampaignWithContent | null>(null);
 
   return (
     <div>
@@ -178,17 +191,29 @@ export default function Emails({ loaderData }: Route.ComponentProps) {
               <button
                 key={campaign.id}
                 onClick={() => setSelectedCampaign(campaign)}
-                className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow text-left hover:cursor-pointer hover:shadow-lg"
+                className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow text-left hover:cursor-pointer hover:shadow-lg flex flex-col gap-2 h-[12rem]"
               >
-                <div className="flex justify-between items-center text-sm text-gray-500">
-                  <span>
+                <div className="flex flex-col h-full gap-3">
+                  <div className="text-sm text-gray-500">
                     {campaign.send_time
                       ? new Date(campaign.send_time).toLocaleDateString(
                           [],
                           dateOptions,
-                        ) + " Newsletter"
+                        )
                       : campaign.status}
-                  </span>
+                  </div>
+                  {campaign.parsedContent !== null &&
+                    campaign.parsedContent[0] !== null && (
+                      <h3 className="font-semibold text-lg text-[#25384F]">
+                        {stripHtml(campaign.parsedContent[0])}
+                      </h3>
+                    )}
+                  {campaign.parsedContent !== null &&
+                    campaign.parsedContent[1] !== null && (
+                      <p className="text-sm text-gray-600 line-clamp-2 mt-auto">
+                        {stripHtml(campaign.parsedContent[1])}
+                      </p>
+                    )}
                 </div>
               </button>
             ))}
