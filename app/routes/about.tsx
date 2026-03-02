@@ -1,9 +1,10 @@
 import React from "react";
+import type { Route } from "./+types/about";
 import AboutComp from "../about/about";
 import type { PageContent } from "~/types/db";
 import { PageContentService } from "~/services/pageContent";
 
-export async function loader({ context }: Route.LoaderArgs) {
+export async function loader({ context }: Route["LoaderArgs"]) {
   const db = context.cloudflare.env.DB;
   const pageContentService = new PageContentService(db);
   
@@ -20,6 +21,6 @@ export async function loader({ context }: Route.LoaderArgs) {
   };
 }
 
-export default function About({ loaderData }: Route.ComponentProps) {
+export default function About({ loaderData }: Route["ComponentProps"]) {
   return <AboutComp pageContent={loaderData.pageContent} message={loaderData.message} />;
 }

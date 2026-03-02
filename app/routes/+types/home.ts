@@ -1,10 +1,10 @@
 export type Route = {
-  MetaArgs: {};
+  MetaArgs: Record<string, unknown>;
   LoaderArgs: {
     context: {
       cloudflare: {
         env: {
-          DB: string;
+          DB: any;
           VALUE_FROM_CLOUDFLARE: string;
         };
       };

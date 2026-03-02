@@ -1,8 +1,9 @@
 import type { PageContent } from "~/types/db";
+import type { Route } from "./+types/contact";
 import { default as Contact } from "../contact/contact";
 import { PageContentService } from "~/services/pageContent";
 
-export async function loader({ context }: Route.LoaderArgs) {
+export async function loader({ context }: Route["LoaderArgs"]) {
   const db = context.cloudflare.env.DB;
   const pageContentService = new PageContentService(db);
   
@@ -20,6 +21,6 @@ export async function loader({ context }: Route.LoaderArgs) {
 }
 
 
-export default function ContactPage({ loaderData }: Route.ComponentProps) {
-  return <Contact message={loaderData.mmessage} pageContent={loaderData.pageContent} />;
+export default function ContactPage({ loaderData }: Route["ComponentProps"]) {
+  return <Contact message={loaderData.message} pageContent={loaderData.pageContent} />;
 }

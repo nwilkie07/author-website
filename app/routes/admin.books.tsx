@@ -7,7 +7,7 @@ import { r2Image } from "../utils/images";
 import { listFiles } from "../utils/r2Client";
 import DragDropUploader from "../components/DragDropUploader";
 
-export async function loader({ context }: Route.LoaderArgs) {
+export async function loader({ context }: Route["LoaderArgs"]) {
   const db = context.cloudflare.env.DB;
   const booksService = new BooksService(db);
   const books = await booksService.getAllBooksWithPurchaseLinks();
@@ -28,7 +28,7 @@ export async function loader({ context }: Route.LoaderArgs) {
   return { books, icons };
 }
 
-export async function action({ request, context }: Route.ActionArgs) {
+export async function action({ request, context }: Route["ActionArgs"]) {
   const db = context.cloudflare.env.DB;
   const bucket = context.cloudflare.env.IMAGES_BUCKET;
   const booksService = new BooksService(db);
@@ -613,7 +613,7 @@ function PurchaseLinkForm({
   );
 }
 
-export default function AdminBooks({ loaderData }: Route.ComponentProps) {
+export default function AdminBooks({ loaderData }: Route["ComponentProps"]) {
   const { books: initialBooks, icons } = (loaderData as any) || {
     books: [],
     icons: [],
@@ -634,7 +634,7 @@ export default function AdminBooks({ loaderData }: Route.ComponentProps) {
     }
   };
 
-  const filteredIcons = icons.filter((icon) => {
+  const filteredIcons = icons.filter((icon: { key: string; name: string }) => {
     if (icon.key !== "icons/") {
       return icon;
     }

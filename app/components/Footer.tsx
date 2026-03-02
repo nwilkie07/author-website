@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import React from "react";
 import { r2Image } from "~/utils/images";
 import { useState } from "react";
 import { useScreenSize } from "~/hooks/useScreenSize";
@@ -145,18 +146,19 @@ export function Footer({
           </div>
           <div className="flex grow-3 gap-3 text-[#E3D2CB] text-xl justify-center">
             {!isMobile ? (
-              footerLinks.map((link, index) => (
-                <>
-                  <Link
-                    key={link.to}
-                    to={link.to}
-                    className="hover:underline hover:cursor-pointer"
-                  >
-                    {isTablet ? link.label.split(" ")[0] : link.label}
-                  </Link>
-                  {footerLinks.length - 1 !== index && "|"}
-                </>
-              ))
+              <div className="flex gap-3">
+                {footerLinks.map((link, index) => (
+                  <React.Fragment key={link.to}>
+                    <Link
+                      to={link.to}
+                      className="hover:underline hover:cursor-pointer"
+                    >
+                      {isTablet ? link.label.split(" ")[0] : link.label}
+                    </Link>
+                    {footerLinks.length - 1 !== index && "|"}
+                  </React.Fragment>
+                ))}
+              </div>
             ) : (
               <div className="flex gap-8 p-8">
                 <Link to="/">

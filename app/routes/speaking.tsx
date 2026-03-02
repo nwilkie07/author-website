@@ -1,9 +1,9 @@
-import type { Route } from "./+types/home";
+import type { Route } from "./+types/speaking";
 import type { PageContent } from "~/types/db";
 import Speaking from "../speaking/speaking";
 import { PageContentService } from "~/services/pageContent";
 
-export async function loader({ context }: Route.LoaderArgs) {
+export async function loader({ context }: Route["LoaderArgs"]) {
   const db = context.cloudflare.env.DB;
   const pageContentService = new PageContentService(db);
   
@@ -20,6 +20,6 @@ export async function loader({ context }: Route.LoaderArgs) {
   };
 }
 
-export default function SpeakingPage({ loaderData }: Route.ComponentProps) {
+export default function SpeakingPage({ loaderData }: Route["ComponentProps"]) {
   return <Speaking pageContent={loaderData.pageContent} message={loaderData.message}/>;
 }

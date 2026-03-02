@@ -4,14 +4,14 @@ import { BooksService } from "../services/books";
 import type { BookWithPurchaseLinks, PageContent } from "../types/db";
 import { PageContentService } from "~/services/pageContent";
 
-export function meta({}: Route.MetaArgs) {
+export function meta({}: Route["MetaArgs"]) {
   return [
     { title: "New React Router App" },
     { name: "description", content: "Welcome to React Router!" },
   ];
 }
 
-export async function loader({ context }: Route.LoaderArgs) {
+export async function loader({ context }: Route["LoaderArgs"]) {
   const db = context.cloudflare.env.DB;
   const booksService = new BooksService(db);
   const pageContentService = new PageContentService(db)
@@ -32,6 +32,6 @@ export async function loader({ context }: Route.LoaderArgs) {
   };
 }
 
-export default function Home({ loaderData }: Route.ComponentProps) {
+export default function Home({ loaderData }: Route["ComponentProps"]) {
   return <Welcome message={loaderData.message} books={loaderData.books} pageContent={loaderData.pageContent} />;
 }
