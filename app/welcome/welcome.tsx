@@ -4,17 +4,8 @@ import type { BookWithPurchaseLinks, PageContent } from "../types/db";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 import { Carousel } from "../components/Carousel";
-import { MultiBookCarousel } from "../components/MultiBookCarousel";
-import {
-  SkeletonImage,
-  SkeletonLine,
-  SkeletonGroup,
-} from "../components/Skeleton";
-import { Modal } from "../components/Modal";
-import type { PurchaseLink } from "../types/db";
-import { useState } from "react";
-import type { BookItem, SeriesGroup } from "~/routes/shop";
-import LoadingWrapper from "~/components/LoadingWrapper";
+import { BookDisplay } from "../components/BookDisplay";
+import type { BookItem } from "~/types/books";
 
 export function Welcome({
   message,
@@ -25,27 +16,6 @@ export function Welcome({
   books?: BookWithPurchaseLinks[];
   pageContent?: PageContent[];
 }) {
-  const carouselItems = books.map((book) => ({
-    id: book.id,
-    imageUrl: r2Image(book.image_url),
-    title: book.name,
-    description: book.description || undefined,
-    purchaseLinks: book.purchase_links,
-  }));
-
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalLinks, setModalLinks] = useState<PurchaseLink[]>([]);
-  const [modalBookTitle, setModalBookTitle] = useState<string>("");
-  const handleImageClick = (item: {
-    imageUrl: string;
-    title?: string;
-    purchaseLinks?: PurchaseLink[];
-  }) => {
-    setModalLinks(item.purchaseLinks ?? []);
-    setModalBookTitle(item.title ?? "");
-    setModalOpen(true);
-  };
-
   const bookItems: BookItem[] = books.map((it) => ({
     id: it.id,
     name: it.name,
@@ -53,30 +23,9 @@ export function Welcome({
     description: it.description,
     seriesTitle: it.series_title,
     seriesNumber: it.series_number,
-    purchaseLinks: it.purchase_links as PurchaseLink[],
+    byLine: it.by_line,
+    purchaseLinks: it.purchase_links as any[],
   }));
-
-  const seriesGroups: SeriesGroup[] = [];
-  const standaloneBooks: BookItem[] = [];
-
-  bookItems.forEach((book) => {
-    if (book.seriesTitle) {
-      const existing = seriesGroups.find((g) => g.title === book.seriesTitle);
-      if (existing) {
-        existing.books.push(book);
-      } else {
-        seriesGroups.push({ title: book.seriesTitle, books: [book] });
-      }
-    } else {
-      standaloneBooks.push(book);
-    }
-  });
-
-  seriesGroups.forEach((group) => {
-    group.books.sort((a, b) => (a.seriesNumber ?? 0) - (b.seriesNumber ?? 0));
-  });
-
-  seriesGroups.sort((a, b) => a.title.localeCompare(b.title));
 
   return (
     <div>
@@ -103,56 +52,12 @@ export function Welcome({
             </Link>
           </div>
         </div>
-        <Modal
-          isOpen={modalOpen}
-          onClose={() => setModalOpen(false)}
-          title="Purchase Links"
-          purchaseLinks={modalLinks}
-          bookTitle={modalBookTitle}
-        />
       </section>
 
       <section className="bg-[#f3e3dd] pt-12 relative">
         <div className="flex flex-col">
-          <LoadingWrapper
-            isLoading={books.length === 0}
-            variant="grid"
-            skeletonCount={3}
-          >
-            {seriesGroups.length > 0 &&
-              seriesGroups.map(({ title, books }) => {
-                return (
-                  <div className="pb-6">
-                    <div className="flex w-full justify-center align-center">
-                      <div className="bg-white text-[#25384F] font-[IvyModeSemiBold] text-2xl rounded-lg p-4 mx-8 w-[70%] text-center">
-                        {title}
-                      </div>
-                    </div>
-                    <MultiBookCarousel
-                      containerClassName="px-8"
-                      onImageClick={handleImageClick}
-                      items={books.map((it) => ({
-                        id: it.id,
-                        imageUrl: it.imageUrl,
-                        title: it.name,
-                        description: it.description ?? "",
-                        seriesNumber: it.seriesNumber,
-                        seriesTitle: it.seriesTitle,
-                        purchaseLinks: it.purchaseLinks,
-                      }))}
-                    />
-                  </div>
-                );
-              })}
-          </LoadingWrapper>
+          <BookDisplay books={bookItems} isLoading={books.length === 0} />
         </div>
-        <Modal
-          isOpen={modalOpen}
-          onClose={() => setModalOpen(false)}
-          title="Purchase Links"
-          purchaseLinks={modalLinks}
-          bookTitle={modalBookTitle}
-        />
         <img
           src={r2Image("static_photos/footer_one.png")}
           alt="profile"

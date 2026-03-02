@@ -1,6 +1,15 @@
 import { Link } from "react-router";
 import { r2Image } from "~/utils/images";
 import { useState } from "react";
+import { useScreenSize } from "~/hooks/useScreenSize";
+import {
+  CircleUserRound,
+  House,
+  Mail,
+  Mic,
+  Newspaper,
+  ShoppingBasket,
+} from "lucide-react"; // Import the House icon from lucide-react
 
 type FooterProps = {
   showNewsletter?: boolean;
@@ -10,8 +19,9 @@ type FooterProps = {
 const footerLinks = [
   { to: "/", label: "Home" },
   { to: "/about", label: "About Me" },
-  { to: "/speaking", label: "Speaking" },
   { to: "/email", label: "Newsletters" },
+  { to: "/speaking", label: "Speaking" },
+  { to: "/contact", label: "Contact" },
   { to: "/shop", label: "Shop for Books" },
 ] as const;
 
@@ -26,6 +36,7 @@ export function Footer({
     "idle" | "loading" | "success" | "error"
   >("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const { isMobile, isTablet } = useScreenSize();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,18 +144,41 @@ export function Footer({
             />
           </div>
           <div className="flex grow-3 gap-3 text-[#E3D2CB] text-xl justify-center">
-            {footerLinks.map((link, index) => (
-              <>
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  className="hover:underline hover:cursor-pointer"
-                >
-                  {link.label}
+            {!isMobile ? (
+              footerLinks.map((link, index) => (
+                <>
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    className="hover:underline hover:cursor-pointer"
+                  >
+                    {isTablet ? link.label.split(" ")[0] : link.label}
+                  </Link>
+                  {footerLinks.length - 1 !== index && "|"}
+                </>
+              ))
+            ) : (
+              <div className="flex gap-8 p-8">
+                <Link to="/">
+                  <House />
                 </Link>
-                {footerLinks.length - 1 !== index && "|"}
-              </>
-            ))}
+                <Link to="/about" className="flex gap-8 stroke-white">
+                  <CircleUserRound />
+                </Link>
+                <Link to="/email">
+                  <Newspaper />
+                </Link>
+                <Link to="/speaking">
+                  <Mic />
+                </Link>
+                <Link to="/contact">
+                  <Mail />
+                </Link>
+                <Link to="/shop">
+                  <ShoppingBasket />
+                </Link>
+              </div>
+            )}
           </div>
           <div className="flex min-w-32" />
         </div>

@@ -35,7 +35,7 @@ export default function Speaking({
                 const raw = pageContent[0].description ?? "";
                 const safe = sanitizeHTML(raw);
                 return (
-                  <div className="text-[#25384F] text-base md:text-xl leading-relaxed font-[AthelasBook] text-center md:text-left" dangerouslySetInnerHTML={{ __html: safe }} />
+                  <div className="flex flex-col text-[#25384F] text-base md:text-xl leading-relaxed font-[AthelasBook] text-left gap-4" dangerouslySetInnerHTML={{ __html: safe }} />
                 );
               })()}
               <button className="bg-[#F3E3DD] text-[#0e2a48] px-12 py-6 rounded-full font-medium text-base md:text-xl">

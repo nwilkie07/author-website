@@ -19,11 +19,11 @@ export function Navbar({ activePath }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   return (
     <header className="bg-[#25384f] text-white py-4 z-5">
-      <div className="flex flex-column align-center p-4 gap-8">
+      <div className="flex flex-column align-center p-4 gap-8 items-center">
         <img
           src={r2Image("static_photos/author_logo.png")}
           alt="author_logo"
-          className="w-64 h-24"
+          className="w-32 h-12 sm:w-64 sm:h-24"
         />
 
         <div className="container mx-auto px-6 flex items-center lg:justify-between justify-end">

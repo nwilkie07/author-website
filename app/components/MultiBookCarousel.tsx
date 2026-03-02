@@ -8,6 +8,7 @@ type Item = {
   description?: string;
   seriesTitle: string | null;
   seriesNumber: number | null;
+  byLine: string;
   purchaseLinks?: PurchaseLink[];
 };
 
@@ -40,7 +41,7 @@ export const MultiBookCarousel: React.FC<Props> = ({
           <div
             key={it.id ?? it.title}
             className={
-              "flex flex-col lg:flex-row min-w-full max-w-full lg:min-w-[900px] lg:max-w-[900px] h-full bg-white rounded-lg p-4 gap-4 lg:gap-16"
+              "flex flex-col lg:flex-row min-w-full max-w-full lg:min-w-[900px] lg:max-w-[900px] h-auto bg-white rounded-lg p-4 gap-4 lg:gap-16 webkit-fill-available"
             }
             style={{
               scrollSnapAlign: "start",
@@ -64,12 +65,16 @@ export const MultiBookCarousel: React.FC<Props> = ({
                   {it.title}
                 </div>
               )}
-              {it.seriesNumber && it.seriesTitle && (
+              {it.seriesNumber && (
                 <div className="flex w-full text-xl text-[#25384F] font-[IvyModeSemiBold] justify-center">
                   {"Book " + it.seriesNumber}
                 </div>
               )}
-
+              {it.byLine && (
+                <div className="flex w-full text-xl text-[#25384F] font-[IvyModeSemiBold] justify-center">
+                  {it.byLine}
+                </div>
+              )}
               {it.description && (
                 <div
                   className="text-[#25384F] font-[athelasbook] text-xl overflow-auto h-[30vh] lg:h-auto"
