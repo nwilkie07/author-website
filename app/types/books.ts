@@ -8,6 +8,7 @@ export type BookItem = {
   seriesTitle: string | null;
   seriesNumber: number | null;
   byLine: string;
+  alt_text: string;
   purchaseLinks: PurchaseLink[];
 };
 
@@ -25,6 +26,7 @@ export function processBooks(
     seriesTitle: string | null;
     seriesNumber: number | null;
     byLine: string;
+    alt_text: string;
     purchaseLinks: PurchaseLink[];
   }>,
 ): { seriesGroups: SeriesGroup[]; standaloneBooks: BookItem[] } {

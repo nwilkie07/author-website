@@ -16,12 +16,16 @@ export default function About({
   // Loading wrapper around the entire content to standardize UX
   const isLoading = !pageContent || pageContent.length === 0;
   return (
-    <LoadingWrapper isLoading={isLoading} variant="section" skeletonCount={3}>
-      {!isLoading && (
-        <>
-          <Navbar activePath="/about" />
-          <section className="bg-[#426685] py-20 relative">
-            <div className="container mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
+    <>
+      <Navbar activePath="/about" />
+      <section className="bg-[#426685] py-20 relative">
+        <div className="container mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
+          <LoadingWrapper
+            isLoading={isLoading}
+            variant="section"
+            skeletonCount={1}
+          >
+            {!isLoading && (
               <div>
                 <div className="text-2xl md:text-4xl text-[#E3D2CB] font-[IvyModeSemiBold] mb-6 text-left">
                   {pageContent[0].title}
@@ -50,20 +54,20 @@ export default function About({
                   );
                 })()}
               </div>
-              <div className="flex items-center justify-center">
-                <div>
-                  <img
-                    src={r2Image("static_photos/about.webp")}
-                    alt="Author"
-                    className="w-full h-full"
-                  />
-                </div>
-              </div>
+            )}
+          </LoadingWrapper>
+          <div className="flex items-center justify-center">
+            <div>
+              <img
+                src={r2Image("static_photos/about.webp")}
+                alt="Two books, The Prophecy and Fresh Start by Karen MacLeod-Wilkie are stacked on top of each other on a wooden table in a brightly lit environment. A figurine of a fairy sitting and thinking sits atop the stack of books."
+                className="w-full h-full"
+              />
             </div>
-          </section>
-          <Footer logoText="KMW Logo • Design-web-io.png" />
-        </>
-      )}
-    </LoadingWrapper>
+          </div>
+        </div>
+      </section>
+      <Footer logoText="KMW Logo • Design-web-io.png" />
+    </>
   );
 }

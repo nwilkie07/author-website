@@ -90,7 +90,7 @@ export default function AdminIcons({ loaderData }: any) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
           {icons?.map((ico: any) => (
             <div key={ico.key} className="bg-white rounded-lg shadow p-4 flex flex-col items-center gap-2">
-              <img src={r2Image(ico.key)} alt={ico.name} className="w-24 h-24 object-contain" />
+              <img src={r2Image(ico.key)} alt={ico.name || 'Icon'} className="w-24 h-24 object-contain" />
               <div className="text-sm text-gray-700" title={ico.name}>{ico.name}</div>
               <form method="post" className="w-full" onSubmit={(e)=>{ if(!confirm("Delete this icon?")) e.preventDefault(); }}>
                 <input type="hidden" name="intent" value="delete-icon" />

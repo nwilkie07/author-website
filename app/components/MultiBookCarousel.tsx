@@ -1,23 +1,13 @@
 import React from "react";
 import type { PurchaseLink } from "../types/db";
-
-type Item = {
-  id?: string | number;
-  imageUrl: string;
-  title: string;
-  description?: string;
-  seriesTitle: string | null;
-  seriesNumber: number | null;
-  byLine: string;
-  purchaseLinks?: PurchaseLink[];
-};
+import type { BookItem } from "~/types/books";
 
 type Props = {
-  items: Item[];
+  items: BookItem[];
   imageWidth?: string;
   imageHeight?: string;
   containerClassName?: string;
-  onImageClick?: (item: Item) => void;
+  onImageClick?: (item: BookItem) => void;
 };
 
 // A simple, responsive horizontal carousel-like grid that can show multiple books side-by-side
@@ -39,7 +29,7 @@ export const MultiBookCarousel: React.FC<Props> = ({
       >
         {items.map((it) => (
           <div
-            key={it.id ?? it.title}
+            key={it.id ?? it.name}
             className={
               "flex flex-col lg:flex-row min-w-full max-w-full lg:min-w-[900px] lg:max-w-[900px] h-auto bg-white rounded-lg p-4 gap-4 lg:gap-16 webkit-fill-available"
             }
@@ -49,7 +39,7 @@ export const MultiBookCarousel: React.FC<Props> = ({
           >
             <img
               src={it.imageUrl}
-              alt={it.title}
+              alt={it.alt_text}
               className="h-[300px] lg:h-[500px] object-contain"
               style={{
                 width: imageWidth,
@@ -60,9 +50,9 @@ export const MultiBookCarousel: React.FC<Props> = ({
               }}
             />
             <div className="flex flex-col gap-4 lg:gap-6 lg:px-8 h-auto px-6">
-              {it.title && (
+              {it.name && (
                 <div className="flex w-full text-[#25384f] justify-center text-center text-3xl font-[IvyModeBold]">
-                  {it.title}
+                  {it.name}
                 </div>
               )}
               {it.seriesNumber && (

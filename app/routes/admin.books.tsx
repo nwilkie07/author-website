@@ -667,11 +667,11 @@ export default function AdminBooks({ loaderData }: Route["ComponentProps"]) {
                   </div>
                 ) : (
                   <>
-                    <img
-                      src={r2Image(book.image_url)}
-                      alt={book.name}
-                      className="w-28 h-40 object-cover rounded shadow"
-                    />
+            <img
+              src={r2Image(book.image_url)}
+              alt={`Cover image for ${book.name}`}
+              className="w-28 h-40 object-cover rounded shadow"
+            />
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <h3 className="text-lg font-semibold text-black">
@@ -741,10 +741,10 @@ export default function AdminBooks({ loaderData }: Route["ComponentProps"]) {
                                   rel="noopener noreferrer"
                                   className="inline-flex items-center gap-1 text-black"
                                 >
-                                  {link.icon_url && (
+                  {link.icon_url && (
                                     <img
                                       src={r2Image(link.icon_url)}
-                                      alt=""
+                                      alt={`Icon for ${link.store_name}`}
                                       className="w-3 h-3"
                                     />
                                   )}

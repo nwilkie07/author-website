@@ -140,7 +140,7 @@ export function Footer({
           <div>
             <img
               src={r2Image("static_photos/author_logo.png")}
-              alt="author_logo"
+              alt="Author logo of a fairy and the name Karen MacLeod-Wilkie"
               className="w-32 h-12"
             />
           </div>

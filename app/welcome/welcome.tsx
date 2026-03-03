@@ -3,9 +3,10 @@ import { r2Image } from "../utils/images";
 import type { BookWithPurchaseLinks, PageContent } from "../types/db";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
-import { Carousel } from "../components/Carousel";
 import { BookDisplay } from "../components/BookDisplay";
 import type { BookItem } from "~/types/books";
+import LoadingWrapper from "~/components/LoadingWrapper";
+import { useScreenSize } from "~/hooks/useScreenSize";
 
 export function Welcome({
   message,
@@ -24,19 +25,28 @@ export function Welcome({
     seriesTitle: it.series_title,
     seriesNumber: it.series_number,
     byLine: it.by_line,
+    alt_text: it.alt_text,
     purchaseLinks: it.purchase_links as any[],
   }));
+
+  const isLoading = !pageContent || pageContent.length === 0;
+  const {isMobile} = useScreenSize();
 
   return (
     <div>
       <Navbar activePath="/" />
 
       <section
-        className="h-[60vh] md:h-[520px] bg-center bg-cover"
+        className="h-[60vh] md:max-h-[600px] bg-center bg-cover"
         style={{
           backgroundImage: `url('${r2Image("static_photos/home_background.jpg")}')`,
         }}
       >
+        <img
+          src={r2Image("static_photos/home_background.jpg")}
+          alt="The Author Karen MacLeod-Wilkie sits at a wooden dining table in a bright room, wearing a patterned burgundy and teal blouse. She holds a coffee mug in one hand and rests the other hand on The Prophecy book. The table has woven placemats and a few stacked books; a window with greenery is in the background. Karen is smiling while on the process of opening The Prophecy."
+          className="hidden"
+        />
         <div className="flex w-full mx-auto h-full flex items-center justify-center">
           <div className="flex flex-col w-[80%] text-white space-y-6 pl-6 md:pl-0">
             <h1
@@ -46,9 +56,9 @@ export function Welcome({
               Let’s transport you to another time and place…
             </h1>
             <Link to="/shop">
-            <button className="bg-[#F3E3DD] text-[#0e2a48] px-12 py-6 rounded-full font-large text-xl lg:text-2xl hover:underline hover:cursor-pointer">
-              view all books
-            </button>
+              <button className="bg-[#F3E3DD] text-[#0e2a48] px-12 py-6 rounded-full font-large text-xl lg:text-2xl hover:underline hover:cursor-pointer">
+                view all books
+              </button>
             </Link>
           </div>
         </div>
@@ -56,69 +66,73 @@ export function Welcome({
 
       <section className="bg-[#f3e3dd] pt-12 relative">
         <div className="flex flex-col">
-          <BookDisplay books={bookItems} isLoading={books.length === 0} />
+          <BookDisplay books={bookItems} isLoading={books.length === 0} skeletonCount={isMobile ? 3 : 9} />
         </div>
         <img
           src={r2Image("static_photos/footer_one.png")}
-          alt="profile"
+          alt="Decorative footer illustration"
           className="w-full"
         />
       </section>
 
       <section className="bg-[#f3e3dd] pt-20 pb-16">
-        <div className="flex flex-col md:flex-row px-8 items-center justify-center">
+        <div className="flex flex-col md:flex-row px-8 items-center justify-center w-full">
           <img
             src={r2Image("static_photos/profile.png")}
-            alt="profile"
+            alt="Author portrait"
             className="w-[40%]"
           />
-          {pageContent.length == 1 ? (
-            <div className="flex flex-col px-12 md:pl-24 md:gap-12 gap-8 items-center md:items-start md:items-left text-center md:text-start">
-              <div className="flex w-fit h-fit text-5xl text-[#0e2a48] font-[IvyModeBold]">
-                {pageContent[0].title}
-              </div>
-              <div className="flex w-fit h-fit text-gray-700 leading-relaxed text-2xl font-[AthelasBook]">
-                {(() => {
-                  const raw = pageContent[0].description ?? "";
-                  let safe = raw;
-                  if (typeof window !== "undefined") {
-                    try {
-                      // @ts-ignore
-                      const lib = require("dompurify");
-                      const sanitizer =
-                        lib?.default?.sanitize ??
-                        lib?.sanitize ??
-                        ((html: string) => html);
-                      safe = sanitizer(raw);
-                    } catch {
-                      safe = raw;
+          <LoadingWrapper
+            isLoading={isLoading}
+            variant="text"
+            skeletonCount={1}
+          >
+            {!isLoading && (
+              <div className="flex flex-col px-12 md:pl-24 md:gap-12 gap-8 items-center md:items-start md:items-left text-center md:text-start">
+                <div className="flex w-fit h-fit text-5xl text-[#0e2a48] font-[IvyModeBold]">
+                  {pageContent[0].title}
+                </div>
+                <div className="flex w-fit h-fit text-gray-700 leading-relaxed text-2xl font-[AthelasBook]">
+                  {(() => {
+                    const raw = pageContent[0].description ?? "";
+                    let safe = raw;
+                    if (typeof window !== "undefined") {
+                      try {
+                        // @ts-ignore
+                        const lib = require("dompurify");
+                        const sanitizer =
+                          lib?.default?.sanitize ??
+                          lib?.sanitize ??
+                          ((html: string) => html);
+                        safe = sanitizer(raw);
+                      } catch {
+                        safe = raw;
+                      }
                     }
-                  }
-                  return (
-                    <div
-                      className="flex flex-col text-[#25384F] text-base md:text-xl leading-relaxed font-[AthelasBook] text-center md:text-left gap-8"
-                      dangerouslySetInnerHTML={{ __html: safe }}
-                    />
-                  );
-                })()}
+                    return (
+                      <div
+                        className="flex flex-col text-[#25384F] text-base md:text-xl leading-relaxed font-[AthelasBook] text-center md:text-left gap-8"
+                        dangerouslySetInnerHTML={{ __html: safe }}
+                      />
+                    );
+                  })()}
+                </div>
+                <div>
+                  <Link to="/about">
+                    <button className="bg-white text-[#426684] px-8 py-6 rounded-full font-large text-2xl font-[athelasbook] hover:underline hover:cursor-pointer">
+                      about me
+                    </button>
+                  </Link>
+                </div>
               </div>
-              <div>
-                <Link to="/about">
-                  <button className="bg-white text-[#426684] px-8 py-6 rounded-full font-large text-2xl font-[athelasbook] hover:underline hover:cursor-pointer">
-                    about me
-                  </button>
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <div>Loading...</div>
-          )}
+            )}
+          </LoadingWrapper>
         </div>
       </section>
       <section className="bg-white pb-12 border-t border-gray-200 text-center text-sm text-[#426684] font-[IvyModeSemiBold]">
         <img
           src={r2Image("static_photos/footer_two.png")}
-          alt="profile"
+          alt="Footer decorative image"
           className="w-full"
         />
         <div className="relative top-[-50px]">

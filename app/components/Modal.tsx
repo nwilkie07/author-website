@@ -67,11 +67,11 @@ export function Modal({ isOpen, onClose, title, purchaseLinks, bookTitle }: Moda
                 className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-all group"
               >
                 {link.icon_url ? (
-                  <img 
-                    src={r2Image(link.icon_url)} 
-                    alt={link.store_name}
-                    className="w-10 h-10 object-contain"
-                  />
+                <img 
+                src={r2Image(link.icon_url)} 
+                alt={`Icon for ${link.store_name}`}
+                className="w-10 h-10 object-contain"
+              />
                 ) : (
                   <div className="w-10 h-10 bg-gray-300 rounded flex items-center justify-center">
                     <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

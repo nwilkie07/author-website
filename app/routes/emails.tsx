@@ -6,6 +6,7 @@ import {
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 import { useState } from "react";
+import LoadingWrapper from "~/components/LoadingWrapper";
 
 function sanitizeHtml(html: string): string {
   if (typeof window === "undefined") return html;
@@ -159,6 +160,8 @@ export default function Emails({ loaderData }: Route.ComponentProps) {
   const [selectedCampaign, setSelectedCampaign] =
     useState<CampaignWithContent | null>(null);
 
+    const isLoading = !campaigns || campaigns.length === 0; 
+
   return (
     <div>
       <Navbar activePath="/emails" />
@@ -185,39 +188,46 @@ export default function Emails({ loaderData }: Route.ComponentProps) {
               No emails found.
             </div>
           )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {campaigns.map((campaign) => (
-              <button
-                key={campaign.id}
-                onClick={() => setSelectedCampaign(campaign)}
-                className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow text-left hover:cursor-pointer hover:shadow-lg flex flex-col gap-2 h-[12rem]"
-              >
-                <div className="flex flex-col h-full gap-3">
-                  <div className="text-sm text-gray-500">
-                    {campaign.send_time
-                      ? new Date(campaign.send_time).toLocaleDateString(
-                          [],
-                          dateOptions,
-                        )
-                      : campaign.status}
+          <LoadingWrapper
+            isLoading={isLoading}
+            variant="grid"
+            className="grid-cols-3"
+            skeletonCount={8}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {campaigns.map((campaign) => (
+                <button
+                  key={campaign.id}
+                  onClick={() => setSelectedCampaign(campaign)}
+                  className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow text-left hover:cursor-pointer hover:shadow-lg flex flex-col gap-2 h-[12rem]"
+                >
+                  <div className="flex flex-col h-full gap-3">
+                    <div className="text-sm text-gray-500">
+                      {campaign.send_time
+                        ? new Date(campaign.send_time).toLocaleDateString(
+                            [],
+                            dateOptions,
+                          )
+                        : campaign.status}
+                    </div>
+                    {campaign.parsedContent !== null &&
+                      campaign.parsedContent[0] !== null && (
+                        <h3 className="font-semibold text-lg text-[#25384F]">
+                          {stripHtml(campaign.parsedContent[0])}
+                        </h3>
+                      )}
+                    {campaign.parsedContent !== null &&
+                      campaign.parsedContent[1] !== null && (
+                        <p className="text-sm text-gray-600 line-clamp-2 mt-auto">
+                          {stripHtml(campaign.parsedContent[1])}
+                        </p>
+                      )}
                   </div>
-                  {campaign.parsedContent !== null &&
-                    campaign.parsedContent[0] !== null && (
-                      <h3 className="font-semibold text-lg text-[#25384F]">
-                        {stripHtml(campaign.parsedContent[0])}
-                      </h3>
-                    )}
-                  {campaign.parsedContent !== null &&
-                    campaign.parsedContent[1] !== null && (
-                      <p className="text-sm text-gray-600 line-clamp-2 mt-auto">
-                        {stripHtml(campaign.parsedContent[1])}
-                      </p>
-                    )}
-                </div>
-              </button>
-            ))}
-          </div>
+                </button>
+              ))}
+            </div>
+            Ò
+          </LoadingWrapper>
         </div>
       </section>
 

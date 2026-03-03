@@ -22,7 +22,7 @@ export function Navbar({ activePath }: NavbarProps) {
       <div className="flex flex-column align-center p-4 gap-8 items-center">
         <img
           src={r2Image("static_photos/author_logo.png")}
-          alt="author_logo"
+          alt="Author logo of a fairy and the name Karen MacLeod-Wilkie"
           className="w-32 h-12 sm:w-64 sm:h-24"
         />
 

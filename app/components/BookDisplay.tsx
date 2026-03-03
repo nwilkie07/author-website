@@ -54,6 +54,7 @@ export function BookDisplay({
       <LoadingWrapper
         isLoading={isLoading}
         variant="grid"
+        className="grid-cols-1 md:grid-cols-3 m-8"
         skeletonCount={skeletonCount}
       >
         {seriesGroups.length > 0 &&
@@ -68,16 +69,7 @@ export function BookDisplay({
                 <MultiBookCarousel
                   containerClassName="px-8"
                   onImageClick={handleImageClick}
-                  items={books.map((it) => ({
-                    id: it.id,
-                    imageUrl: it.imageUrl,
-                    title: it.name,
-                    description: it.description ?? "",
-                    seriesNumber: it.seriesNumber,
-                    seriesTitle: it.seriesTitle,
-                    byLine: it.byLine,
-                    purchaseLinks: it.purchaseLinks,
-                  }))}
+                  items={books}
                 />
               </div>
             );

@@ -5,6 +5,7 @@ export interface Book {
   series_title: string | null;
   series_number: number | null;
   by_line: string;
+  alt_text: string;
   image_url: string;
   created_at: string;
   updated_at: string;
