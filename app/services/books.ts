@@ -12,10 +12,25 @@ export class BooksService {
         name TEXT NOT NULL,
         description TEXT,
         image_url TEXT NOT NULL,
+        by_line TEXT,
+        alt_text TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )`
     ).run();
+    // Migrate existing DBs that don't have the new columns yet
+    try {
+      const info = await this.db.prepare("PRAGMA table_info(books);").all<any>();
+      const columns = (info as any).results?.map((r: any) => r.name) ?? [];
+      if (!columns.includes("by_line")) {
+        await this.db.prepare("ALTER TABLE books ADD COLUMN by_line TEXT").run();
+      }
+      if (!columns.includes("alt_text")) {
+        await this.db.prepare("ALTER TABLE books ADD COLUMN alt_text TEXT").run();
+      }
+    } catch {
+      // ignore migration errors
+    }
     await this.db.prepare(
       `CREATE TABLE IF NOT EXISTS purchase_links (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -65,11 +80,11 @@ export class BooksService {
     return booksWithLinks;
   }
 
-  async createBook(name: string, imageUrl: string, description?: string, seriesTitle?: string | null, seriesNumber?: number | null): Promise<Book> {
+  async createBook(name: string, imageUrl: string, description?: string, seriesTitle?: string | null, seriesNumber?: number | null, byLine?: string | null, altText?: string | null): Promise<Book> {
     await this.ensureTables();
     const result = await this.db
-      .prepare("INSERT INTO books (name, image_url, description, series_title, series_number) VALUES (?, ?, ?, ?, ?) RETURNING *")
-      .bind(name, imageUrl, description || null, seriesTitle ?? null, seriesNumber ?? null)
+      .prepare("INSERT INTO books (name, image_url, description, series_title, series_number, by_line, alt_text) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *")
+      .bind(name, imageUrl, description || null, seriesTitle ?? null, seriesNumber ?? null, byLine ?? null, altText ?? null)
       .first<Book>();
     
     if (!result) {
@@ -78,11 +93,11 @@ export class BooksService {
     return result;
   }
 
-  async updateBook(id: number, name: string, imageUrl: string, description?: string, seriesTitle?: string | null, seriesNumber?: number | null): Promise<Book | null> {
+  async updateBook(id: number, name: string, imageUrl: string, description?: string, seriesTitle?: string | null, seriesNumber?: number | null, byLine?: string | null, altText?: string | null): Promise<Book | null> {
     await this.ensureTables();
     const result = await this.db
-      .prepare("UPDATE books SET name = ?, image_url = ?, description = ?, series_title = ?, series_number = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? RETURNING *")
-      .bind(name, imageUrl, description || null, seriesTitle ?? null, seriesNumber ?? null, id)
+      .prepare("UPDATE books SET name = ?, image_url = ?, description = ?, series_title = ?, series_number = ?, by_line = ?, alt_text = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? RETURNING *")
+      .bind(name, imageUrl, description || null, seriesTitle ?? null, seriesNumber ?? null, byLine ?? null, altText ?? null, id)
       .first<Book>();
     
     return result;

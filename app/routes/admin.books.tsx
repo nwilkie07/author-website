@@ -80,12 +80,16 @@ export async function action({ request, context }: Route["ActionArgs"]) {
       const description = formData.get("description") as string | null;
       const seriesTitle = formData.get("seriesTitle") as string | null;
       const seriesNumber = formData.get("seriesNumber") as string | null;
+      const byLine = formData.get("byLine") as string | null;
+      const altText = formData.get("altText") as string | null;
       const book = await booksService.createBook(
         name,
         imageUrl,
         description || undefined,
         seriesTitle || null,
         seriesNumber ? parseInt(seriesNumber) : null,
+        byLine || null,
+        altText || null,
       );
       return { success: true, book };
     }
@@ -96,6 +100,8 @@ export async function action({ request, context }: Route["ActionArgs"]) {
       const description = formData.get("description") as string | null;
       const seriesTitle = formData.get("seriesTitle") as string | null;
       const seriesNumber = formData.get("seriesNumber") as string | null;
+      const byLine = formData.get("byLine") as string | null;
+      const altText = formData.get("altText") as string | null;
       const book = await booksService.updateBook(
         id,
         name,
@@ -103,6 +109,8 @@ export async function action({ request, context }: Route["ActionArgs"]) {
         description || undefined,
         seriesTitle || null,
         seriesNumber ? parseInt(seriesNumber) : null,
+        byLine || null,
+        altText || null,
       );
       return { success: true, book };
     }
@@ -295,6 +303,8 @@ function BookForm({ book, onCancel }: { book?: Book; onCancel?: () => void }) {
   const [isUploading, setIsUploading] = useState(false);
   const [seriesTitle, setSeriesName] = useState(book?.series_title || "");
   const [seriesNumber, setSeriesNumber] = useState(book?.series_number?.toString() || "");
+  const [byLine, setByLine] = useState<string>(book?.by_line || "");
+  const [altText, setAltText] = useState<string>(book?.alt_text || "");
 
   const uploadImage = async (file: File): Promise<string | null> => {
     const formData = new FormData();
@@ -351,6 +361,8 @@ function BookForm({ book, onCancel }: { book?: Book; onCancel?: () => void }) {
     const formData = new FormData(form);
     formData.set("intent", intent);
     formData.set("imageUrl", finalImageUrl);
+    formData.set("byLine", byLine);
+    formData.set("altText", altText);
 
     try {
       const response = await fetch(window.location.pathname, {
@@ -383,6 +395,8 @@ function BookForm({ book, onCancel }: { book?: Book; onCancel?: () => void }) {
       <input type="hidden" name="imageUrl" value={imageUrl} />
       <input type="hidden" name="seriesTitle" value={seriesTitle} />
       <input type="hidden" name="seriesNumber" value={seriesNumber} />
+      <input type="hidden" name="byLine" value={byLine} />
+      <input type="hidden" name="altText" value={altText} />
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -396,6 +410,30 @@ function BookForm({ book, onCancel }: { book?: Book; onCancel?: () => void }) {
           value={bookName ?? ""}
           className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
           placeholder="Enter book title"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          By Line
+        </label>
+        <input
+          type="text"
+          value={byLine}
+          onChange={(e) => setByLine(e.currentTarget.value)}
+          className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
+          placeholder="Author by line (optional)"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Alt Text
+        </label>
+        <input
+          type="text"
+          value={altText}
+          onChange={(e) => setAltText(e.currentTarget.value)}
+          className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
+          placeholder="Alt text for accessibility (optional)"
         />
       </div>
       <DragDropUploader
@@ -710,11 +748,17 @@ export default function AdminBooks({ loaderData }: Route["ComponentProps"]) {
                       <p className="text-sm text-gray-600 mt-1">
                         {book.description}
                       </p>
-                      {(book.series_name || book.series_number) && (
+                      {(book.series_title || book.series_number) && (
                         <p className="text-sm text-gray-500 mt-1">
-                          {book.series_name && <span>{book.series_name}</span>}
+                          {book.series_title && <span>{book.series_title}</span>}
                           {book.series_number && <span> #{book.series_number}</span>}
                         </p>
+                      )}
+                      {book.by_line && (
+                        <p className="text-sm text-gray-500 mt-1">By: {book.by_line}</p>
+                      )}
+                      {book.alt_text && (
+                        <p className="text-sm text-gray-500 mt-1">Alt: {book.alt_text}</p>
                       )}
                       <div className="mt-3">
                         <h4 className="text-sm font-medium mb-2">

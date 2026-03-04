@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { r2Image } from "~/utils/images";
 
 type NavbarProps = {
@@ -17,6 +17,21 @@ const navLinks = [
 
 export function Navbar({ activePath }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  // Animate mobile menu links with staggered entrance
+  const [showMenuLinks, setShowMenuLinks] = useState(false);
+  // Animate mobile menu links when the menu is opened
+  useEffect(() => {
+    if (menuOpen) {
+      const t = setTimeout(() => setShowMenuLinks(true), 60);
+      return () => {
+        clearTimeout(t);
+        setShowMenuLinks(false);
+      };
+    } else {
+      setShowMenuLinks(false);
+    }
+  }, [menuOpen]);
+
   return (
     <header className="bg-[#25384f] text-white py-4 z-5">
       <div className="flex flex-column align-center p-4 gap-8 items-center">
@@ -94,13 +109,17 @@ export function Navbar({ activePath }: NavbarProps) {
             </button>
           </div>
           <nav className="flex-1 flex flex-col items-center justify-center gap-8">
-            {navLinks.map((link) => {
+            {navLinks.map((link, idx) => {
               const isActive = activePath === link.to;
               return (
                 <Link
                   key={link.to}
                   to={link.to}
-                  className={`text-[#F3E3DD] text-3xl font-[athelas-web] font-thin ${isActive ? "opacity-50" : ""}`}
+                  className={`text-[#F3E3DD] text-3xl font-[athelas-web] font-thin ${isActive ? "opacity-50" : ""} ${showMenuLinks ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
+                  style={{
+                    transition: `opacity 0.25s ease-out, transform 0.25s ease-out`,
+                    transitionDelay: showMenuLinks ? `${idx * 60}ms` : "0ms",
+                  }}
                   onClick={() => setMenuOpen(false)}
                 >
                   {link.label}

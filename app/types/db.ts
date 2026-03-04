@@ -4,8 +4,8 @@ export interface Book {
   description: string | null;
   series_title: string | null;
   series_number: number | null;
-  by_line: string;
-  alt_text: string;
+  by_line: string | null;
+  alt_text: string | null;
   image_url: string;
   created_at: string;
   updated_at: string;
@@ -40,6 +40,15 @@ export interface PageContent {
   page: string;
   title: string;
   description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Icon {
+  id: number;
+  name: string;
+  image_url: string;
+  format: string;
   created_at: string;
   updated_at: string;
 }

@@ -15,8 +15,8 @@
 		"R2_BUCKET_NAME": "",
 		"R2_ENDPOINT": "",
 		"MAIL_CHIMP_LIST_ID": "",
-		"SENDGRID_API_KEY": "",
-		"CONTACT_FORM_TO_EMAIL": ""
+		"CONTACT_FORM_TO_EMAIL": "",
+		"TURNSTILE_SECRET_KEY": ""
 	},
 	"observability": {
 		"enabled": true

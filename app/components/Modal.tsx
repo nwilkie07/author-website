@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { PurchaseLink } from "../types/db";
 import { r2Image } from "~/utils/images";
 
@@ -12,12 +12,19 @@ interface ModalProps {
 
 export function Modal({ isOpen, onClose, title, purchaseLinks, bookTitle }: ModalProps) {
   const sortedLinks = purchaseLinks.sort((a, b) => a.store_name.localeCompare(b.store_name));
+  const [showLinks, setShowLinks] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
+      const timer = setTimeout(() => setShowLinks(true), 100);
+      return () => {
+        clearTimeout(timer);
+        setShowLinks(false);
+      };
     } else {
       document.body.style.overflow = "unset";
+      setShowLinks(false);
     }
 
     return () => {
@@ -35,7 +42,10 @@ export function Modal({ isOpen, onClose, title, purchaseLinks, bookTitle }: Moda
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       
       <div 
-        className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-8 transform transition-all h-[70%]"
+        className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-8 h-[70%] opacity-0 translate-y-4"
+        style={{
+          animation: isOpen ? "modalIn 0.4s ease-out forwards" : undefined,
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -58,13 +68,23 @@ export function Modal({ isOpen, onClose, title, purchaseLinks, bookTitle }: Moda
 
         <div className="space-y-3 h-[80%] overflow-auto scrollbar-color-grey">
           {sortedLinks.length > 0 ? (
-            sortedLinks.map((link) => (
+            sortedLinks.map((link, index) => (
               <a
                 key={link.id}
                 href={link.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-all group"
+                className={`flex items-center gap-4 p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-all group ${
+                  showLinks 
+                    ? "opacity-100 translate-y-0" 
+                    : "opacity-0 translate-y-4"
+                }`}
+                style={{
+                  opacity: showLinks ? 1 : 0,
+                  transform: showLinks ? "translateY(0)" : "translateY(16px)",
+                  transition: `opacity 0.5s ease-out, transform 0.5s ease-out`,
+                  transitionDelay: showLinks ? `${index * 150}ms` : "0ms",
+                }}
               >
                 {link.icon_url ? (
                 <img 

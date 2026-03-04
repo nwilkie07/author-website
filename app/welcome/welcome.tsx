@@ -1,9 +1,10 @@
 import { Link } from "react-router";
 import { r2Image } from "../utils/images";
-import type { BookWithPurchaseLinks, PageContent } from "../types/db";
+import type { BookWithPurchaseLinks, PageContent, Testimonial } from "../types/db";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 import { BookDisplay } from "../components/BookDisplay";
+import { TestimonialCarousel } from "../components/TestimonialCarousel";
 import type { BookItem } from "~/types/books";
 import LoadingWrapper from "~/components/LoadingWrapper";
 import { useScreenSize } from "~/hooks/useScreenSize";
@@ -12,10 +13,12 @@ export function Welcome({
   message,
   books = [],
   pageContent = [],
+  testimonials = [],
 }: {
   message: string;
   books?: BookWithPurchaseLinks[];
   pageContent?: PageContent[];
+  testimonials?: Testimonial[];
 }) {
   const bookItems: BookItem[] = books.map((it) => ({
     id: it.id,
@@ -25,7 +28,7 @@ export function Welcome({
     seriesTitle: it.series_title,
     seriesNumber: it.series_number,
     byLine: it.by_line,
-    alt_text: it.alt_text,
+    alt_text: it.alt_text ?? "",
     purchaseLinks: it.purchase_links as any[],
   }));
 
@@ -135,17 +138,7 @@ export function Welcome({
           alt="Footer decorative image"
           className="w-full"
         />
-        <div className="relative top-[-50px]">
-          <blockquote className="mx-auto max-w-3xl text-2xl ">
-            "The characters in the book are amazing! The mix of personalities
-            and acceptance of each other's differences is just wonderful. It
-            will have you hooked from the first page. Can't wait for the next
-            one to be available."
-          </blockquote>
-          <div className="mt-4">
-            — Jonh Doe. • A Verified Amazon Purchase of the Book
-          </div>
-        </div>
+        <TestimonialCarousel testimonials={testimonials} />
       </section>
 
       <Footer />

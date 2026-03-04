@@ -4,9 +4,23 @@ import { Footer } from "../components/Footer";
 import type { PageContent } from "~/types/db";
 import { LoadingWrapper } from "../components/LoadingWrapper";
 import { sanitizeHTML } from "../utils/sanitizeHTML";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Facebook, Instagram } from "lucide-react";
 import { r2Image } from "~/utils/images";
+
+declare global {
+  interface Window {
+    turnstile: {
+      render: (container: string | HTMLElement, options: {
+        sitekey: string;
+        callback: (token: string) => void;
+        "error-callback": () => void;
+        "expired-callback": () => void;
+      }) => string;
+      reset: (widgetId?: string) => void;
+    };
+  }
+}
 
 export default function Contact({
   message,
@@ -21,15 +35,51 @@ export default function Contact({
   const [lname, setLname] = useState("");
   const [email, setEmail] = useState("");
   const [messageText, setMessageText] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
   const [status, setStatus] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+    script.async = true;
+    script.defer = true;
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (window.turnstile) {
+      window.turnstile.render("#turnstile-container", {
+        sitekey: "0x4AAAAAAADLtFmEW1iKj5Xy",
+        callback: (token: string) => {
+          setTurnstileToken(token);
+        },
+        "error-callback": () => {
+          setErrorMessage("Failed to load captcha. Please try again.");
+        },
+        "expired-callback": () => {
+          setTurnstileToken("");
+        },
+      });
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus("loading");
     setErrorMessage("");
+
+    if (!turnstileToken) {
+      setStatus("error");
+      setErrorMessage("Please complete the captcha verification.");
+      return;
+    }
 
     try {
       const response = await fetch("/api/contact/", {
@@ -39,6 +89,7 @@ export default function Contact({
           name: `${fname} ${lname}`.trim(),
           email,
           message: messageText,
+          "cf-turnstile-response": turnstileToken,
         }),
       });
 
@@ -47,6 +98,10 @@ export default function Contact({
       if (!response.ok) {
         setStatus("error");
         setErrorMessage(data.error || "Failed to send message");
+        if (window.turnstile) {
+          window.turnstile.reset();
+          setTurnstileToken("");
+        }
         return;
       }
 
@@ -55,6 +110,7 @@ export default function Contact({
       setLname("");
       setEmail("");
       setMessageText("");
+      setTurnstileToken("");
     } catch (error) {
       setStatus("error");
       setErrorMessage("Something went wrong. Please try again.");
@@ -158,7 +214,7 @@ export default function Contact({
                       value={fname}
                       onChange={(e) => setFname(e.target.value)}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded bg-white"
+                      className="w-full px-4 py-3 border border-gray-300 rounded bg-white outline-[#E3D2CB] outline-offset-4 text-black"
                     />
                   </div>
                   <div className="field last-name flex flex-col w-full gap-2">
@@ -182,7 +238,7 @@ export default function Contact({
                       value={lname}
                       onChange={(e) => setLname(e.target.value)}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded bg-white"
+                      className="w-full px-4 py-3 border border-gray-300 rounded bg-white outline-[#E3D2CB] outline-offset-4 text-black"
                     />
                   </div>
                 </div>
@@ -201,7 +257,7 @@ export default function Contact({
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded bg-white"
+                    className="w-full px-4 py-3 border border-gray-300 rounded bg-white outline-[#E3D2CB] outline-offset-4 text-black"
                   />
                 </div>
                 <div className="form-item field textarea required flex flex-col gap-2">
@@ -218,8 +274,12 @@ export default function Contact({
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded h-32 bg-white"
+                    className="w-full px-4 py-3 border border-gray-300 rounded h-32 bg-white outline-[#E3D2CB] outline-offset-4 text-black"
                   />
+                </div>
+                
+                <div className="flex justify-center my-4">
+                  <div id="turnstile-container"></div>
                 </div>
               </div>
               {status === "error" && (

@@ -241,11 +241,29 @@ export default function AdminContent({ loaderData }: any) {
                       <div className="text-sm text-gray-600 mt-1">
                         Title: {c.title}
                       </div>
-                      {c.description && (
-                        <div className="text-sm text-gray-700 mt-2">
-                          {c.description}
-                        </div>
-                      )}
+                      {(() => {
+                    const raw = c.description ?? "";
+                    let safe = raw;
+                    if (typeof window !== "undefined") {
+                      try {
+                        // @ts-ignore
+                        const lib = require("dompurify");
+                        const sanitizer =
+                          lib?.default?.sanitize ??
+                          lib?.sanitize ??
+                          ((html: string) => html);
+                        safe = sanitizer(raw);
+                      } catch {
+                        safe = raw;
+                      }
+                    }
+                    return (
+                      <div
+                        className="text-sm text-gray-700 mt-2 flex flex-col gap-4"
+                        dangerouslySetInnerHTML={{ __html: safe }}
+                      />
+                    );
+                  })()}
                       <p className="text-xs text-gray-400 mt-1">
                         Created: {c.created_at}
                       </p>

@@ -92,19 +92,19 @@ export function Footer({
                 <div className="flex flex-col gap-8">
                   <div className="flex md:flex-row flex-col gap-4">
                     <input
-                      className="px-8 py-4 rounded bg-white"
+                      className="px-8 py-4 rounded bg-white outline-[#E3D2CB] outline-offset-4"
                       placeholder="First Name"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                     />
                     <input
-                      className="px-8 py-4 rounded bg-white"
+                      className="px-8 py-4 rounded bg-white outline-[#E3D2CB] outline-offset-4"
                       placeholder="Last Name"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                     />
                     <input
-                      className="px-8 py-4 rounded bg-white"
+                      className="px-8 py-4 rounded bg-white outline-[#E3D2CB] outline-offset-4"
                       placeholder="Email Address"
                       type="email"
                       required

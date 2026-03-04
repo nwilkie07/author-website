@@ -8,11 +8,18 @@ export async function action({ request, context }: Route.ActionArgs) {
     });
   }
 
-  const sendgridApiKey = context.cloudflare.env.SENDGRID_API_KEY;
   const toEmail = context.cloudflare.env.CONTACT_FORM_TO_EMAIL;
+  const turnstileSecretKey = context.cloudflare.env.TURNSTILE_SECRET_KEY;
 
-  if (!sendgridApiKey || !toEmail) {
-    return new Response(JSON.stringify({ error: "SendGrid not configured" }), {
+  if (!toEmail) {
+    return new Response(JSON.stringify({ error: "Contact form email not configured" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  if (!turnstileSecretKey) {
+    return new Response(JSON.stringify({ error: "Captcha not configured" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });
@@ -23,9 +30,10 @@ export async function action({ request, context }: Route.ActionArgs) {
       name?: string; 
       email?: string; 
       subject?: string; 
-      message?: string 
+      message?: string;
+      "cf-turnstile-response"?: string;
     };
-    const { name, email, subject, message } = body;
+    const { name, email, subject, message, "cf-turnstile-response": turnstileToken } = body;
 
     if (!name || !email || !message) {
       return new Response(JSON.stringify({ error: "Name, email, and message are required" }), {
@@ -34,17 +42,49 @@ export async function action({ request, context }: Route.ActionArgs) {
       });
     }
 
-    const sgResponse = await fetch("https://api.sendgrid.com/v3/mail/send", {
+    if (!turnstileToken) {
+      return new Response(JSON.stringify({ error: "Captcha verification required" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const turnstileResponse = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${sendgridApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        personalizations: [{
-          to: [{ email: toEmail }],
-        }],
-        from: { email: toEmail, name: "Author Website Contact" },
+        secret: turnstileSecretKey,
+        response: turnstileToken,
+      }),
+    });
+
+    const turnstileResult = await turnstileResponse.json() as { success?: boolean };
+
+    if (!turnstileResult.success) {
+      console.error("Turnstile verification failed:", turnstileResult);
+      return new Response(JSON.stringify({ error: "Captcha verification failed. Please try again." }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const mailchannelsResponse = await fetch("https://api.mailchannels.net/api/v1/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        personalizations: [
+          {
+            to: [{ email: toEmail, name: "Author Website" }],
+          },
+        ],
+        from: {
+          email: "noreply@yourdomain.com",
+          name: "Author Website Contact",
+        },
         reply_to: { email: email, name: name },
         subject: subject ? `Contact Form: ${subject}` : "Contact Form Submission",
         content: [
@@ -67,9 +107,9 @@ export async function action({ request, context }: Route.ActionArgs) {
       }),
     });
 
-    if (!sgResponse.ok) {
-      const errorText = await sgResponse.text();
-      console.error("SendGrid error:", errorText);
+    if (!mailchannelsResponse.ok) {
+      const errorText = await mailchannelsResponse.text();
+      console.error("Mailchannels error:", errorText);
       return new Response(JSON.stringify({ error: "Failed to send message" }), {
         status: 500,
         headers: { "Content-Type": "application/json" },

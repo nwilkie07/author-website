@@ -54,7 +54,7 @@ function TestimonialForm({ testimonial, onCancel }: { testimonial?: Testimonial;
     <form method="post" className="space-y-4">
       <input type="hidden" name="intent" value={intent} />
       {testimonial && <input type="hidden" name="id" value={testimonial.id} />}
-      <div>
+      <div className="text-black">
         <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
         <input
           type="text"
@@ -66,7 +66,7 @@ function TestimonialForm({ testimonial, onCancel }: { testimonial?: Testimonial;
           placeholder="Person's name"
         />
       </div>
-      <div>
+      <div className="text-black">
         <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
         <textarea
           name="description"
@@ -77,7 +77,7 @@ function TestimonialForm({ testimonial, onCancel }: { testimonial?: Testimonial;
           placeholder="Description"
         />
       </div>
-      <div>
+      <div className="text-black">
         <label className="block text-sm font-medium text-gray-700 mb-1">Store</label>
         <input
           type="text"
@@ -128,7 +128,7 @@ export default function AdminTestimonials({ loaderData }: any) {
                   </div>
                 ) : (
                   <>
-                    <div className="flex-1">
+                    <div className="flex-1 text-black">
                       <div className="flex items-center justify-between">
                         <h3 className="text-lg font-semibold">{t.name}</h3>
                         <div className="flex gap-2">
