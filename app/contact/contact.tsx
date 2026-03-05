@@ -7,6 +7,7 @@ import LoadingWrapper from "~/components/LoadingWrapper";
 import { sanitizeHTML } from "../utils/sanitizeHTML";
 import { Facebook, Instagram } from "lucide-react";
 import { r2Image } from "~/utils/images";
+import { usePageContentCache } from "~/hooks/usePageContentCache";
 
 declare global {
   interface Window {
@@ -29,6 +30,7 @@ export default function Contact({
   message: string;
   pageContent: PageContent[] | Promise<PageContent[]>;
 }) {
+  const cachedPageContent = usePageContentCache("contact", pageContent);
   const [fname, setFname] = useState("");
   const [lname, setLname] = useState("");
   const [email, setEmail] = useState("");
@@ -124,7 +126,7 @@ export default function Contact({
             <LoadingWrapper variant="grid" skeletonCount={2} className="grid-cols-2 m-6" />
           }
         >
-          <Await resolve={pageContent}>
+          <Await resolve={cachedPageContent}>
             {(resolvedContent) =>
               resolvedContent && resolvedContent.length > 0 ? (
                 <div className="container mx-auto px-6 flex flex-col w-full justify-center gap-8 items-center">
@@ -167,7 +169,7 @@ export default function Contact({
           </Await>
         </Suspense>
         <img
-          src={r2Image("static_photos/footer_three.png")}
+          src={"photos/footer_three.png"}
           alt="Footer illustration"
           className="w-full"
           loading="lazy"

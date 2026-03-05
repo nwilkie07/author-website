@@ -9,6 +9,7 @@ import type { BookItem } from "~/types/books";
 import { Suspense } from "react";
 import { Await } from "react-router";
 import LoadingWrapper from "~/components/LoadingWrapper";
+import { useDataCache, readFromCacheSync } from "~/hooks/useDataCache";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -34,7 +35,10 @@ export function loader({ context }: Route.LoaderArgs) {
 export type { BookItem, SeriesGroup } from "~/types/books";
 
 export default function Shop({ loaderData }: Route.ComponentProps) {
-  const booksPromise = (loaderData as unknown as { books: Promise<BookWithPurchaseLinks[]> }).books;
+  const booksPromise = (loaderData as unknown as { books: Promise<BookWithPurchaseLinks[]> }).books;  
+  // Cache books data on the client to avoid skeletons on subsequent navigations
+  const cachedBooks = useDataCache<BookWithPurchaseLinks[]>("shop_books", booksPromise);
+  const cachedBooksSync = readFromCacheSync<BookWithPurchaseLinks[]>("shop_books");
 
   return (
     <div>
@@ -46,32 +50,50 @@ export default function Shop({ loaderData }: Route.ComponentProps) {
           </h1>
         </div>
         <div className="flex flex-col">
-          <Suspense
-            fallback={
-              <LoadingWrapper
-                variant="grid"
-                className="grid-cols-1 md:grid-cols-3 m-8"
-                skeletonCount={3}
-              />
-            }
-          >
-            <Await resolve={booksPromise}>
-              {(books) => {
-                const bookItems: BookItem[] = books.map((it) => ({
-                  id: it.id,
-                  name: it.name,
-                  imageUrl: r2Image(it.image_url),
-                  description: it.description,
-                  seriesTitle: it.series_title,
-                  seriesNumber: it.series_number,
-                  byLine: it.by_line ?? "",
-                  alt_text: it.alt_text ?? "",
-                  purchaseLinks: it.purchase_links as PurchaseLink[],
-                }));
-                return <BookDisplay books={bookItems} />;
-              }}
-            </Await>
-          </Suspense>
+          {cachedBooksSync ? (
+            (() => {
+              const books = cachedBooksSync;
+              const bookItems: BookItem[] = books.map((it) => ({
+                id: it.id,
+                name: it.name,
+                imageUrl: r2Image(it.image_url),
+                description: it.description,
+                seriesTitle: it.series_title,
+                seriesNumber: it.series_number,
+                byLine: it.by_line ?? "",
+                alt_text: it.alt_text ?? "",
+                purchaseLinks: it.purchase_links as PurchaseLink[],
+              }));
+              return <BookDisplay books={bookItems} />;
+            })()
+          ) : (
+            <Suspense
+              fallback={
+                <LoadingWrapper
+                  variant="grid"
+                  className="grid-cols-1 md:grid-cols-3 m-8"
+                  skeletonCount={3}
+                />
+              }
+            >
+              <Await resolve={cachedBooks}>
+                {(books) => {
+                  const bookItems: BookItem[] = books.map((it) => ({
+                    id: it.id,
+                    name: it.name,
+                    imageUrl: r2Image(it.image_url),
+                    description: it.description,
+                    seriesTitle: it.series_title,
+                    seriesNumber: it.series_number,
+                    byLine: it.by_line ?? "",
+                    alt_text: it.alt_text ?? "",
+                    purchaseLinks: it.purchase_links as PurchaseLink[],
+                  }));
+                  return <BookDisplay books={bookItems} />;
+                }}
+              </Await>
+            </Suspense>
+          )}
         </div>
       </section>
       <Footer showNewsletter={false} />

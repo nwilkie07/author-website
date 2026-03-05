@@ -6,6 +6,7 @@ import {
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 import { Suspense, useState } from "react";
+import { useDataCache, readFromCacheSync } from "~/hooks/useDataCache";
 import { Await } from "react-router";
 import LoadingWrapper from "~/components/LoadingWrapper";
 
@@ -215,6 +216,10 @@ export default function Emails({ loaderData }: Route.ComponentProps) {
     error: string | null;
   };
 
+  // Client-side cache for newsletters campaigns
+  const cachedCampaigns = useDataCache<CampaignWithContent[]>("emails_campaigns", campaigns);
+  const cachedCampaignsSync = readFromCacheSync<CampaignWithContent[]>("emails_campaigns");
+
   const [selectedCampaign, setSelectedCampaign] =
     useState<CampaignWithContent | null>(null);
 
@@ -239,24 +244,28 @@ export default function Emails({ loaderData }: Route.ComponentProps) {
             <div className="text-center text-red-500 py-8">{error}</div>
           )}
 
-          <Suspense
-            fallback={
-              <LoadingWrapper
-                variant="grid"
-                className="grid-cols-3"
-                skeletonCount={8}
-              />
-            }
-          >
-            <Await resolve={campaigns}>
-              {(resolvedCampaigns) => (
-                <CampaignGrid
-                  campaigns={resolvedCampaigns}
-                  onSelect={setSelectedCampaign}
+          {cachedCampaignsSync ? (
+            <CampaignGrid campaigns={cachedCampaignsSync} onSelect={setSelectedCampaign} />
+          ) : (
+            <Suspense
+              fallback={
+                <LoadingWrapper
+                  variant="grid"
+                  className="grid-cols-3"
+                  skeletonCount={8}
                 />
-              )}
-            </Await>
-          </Suspense>
+              }
+            >
+              <Await resolve={cachedCampaigns}>
+                {(resolvedCampaigns) => (
+                  <CampaignGrid
+                    campaigns={resolvedCampaigns}
+                    onSelect={setSelectedCampaign}
+                  />
+                )}
+              </Await>
+            </Suspense>
+          )}
         </div>
       </section>
 

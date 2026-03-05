@@ -10,6 +10,8 @@ import { TestimonialCarousel } from "../components/TestimonialCarousel";
 import type { BookItem } from "~/types/books";
 import LoadingWrapper from "~/components/LoadingWrapper";
 import { useScreenSize } from "~/hooks/useScreenSize";
+import { useDataCache } from "~/hooks/useDataCache";
+import { usePageContentCache } from "~/hooks/usePageContentCache";
 
 export function Welcome({
   message,
@@ -23,6 +25,9 @@ export function Welcome({
   testimonials: Testimonial[] | Promise<Testimonial[]>;
 }) {
   const { isMobile } = useScreenSize();
+  const cachedPageContent = usePageContentCache("home", pageContent);
+  const cachedBooks = useDataCache<BookWithPurchaseLinks[]>("books", books);
+  const cachedTestimonials = useDataCache<Testimonial[]>("home_testimonials", testimonials);
 
   return (
     <div>
@@ -31,11 +36,11 @@ export function Welcome({
       <section
         className="h-[60vh] md:max-h-[600px] bg-center bg-cover"
         style={{
-          backgroundImage: `url('${r2Image("static_photos/home_background.jpg")}')`,
+          backgroundImage: `url(photos/home_background.jpg)`,
         }}
       >
         <img
-          src={r2Image("static_photos/home_background.jpg")}
+          src={"photos/home_background.jpg"}
           alt="The Author Karen MacLeod-Wilkie sits at a wooden dining table in a bright room, wearing a patterned burgundy and teal blouse. She holds a coffee mug in one hand and rests the other hand on The Prophecy book. The table has woven placemats and a few stacked books; a window with greenery is in the background. Karen is smiling while on the process of opening The Prophecy."
           className="hidden"
           fetchPriority="high"
@@ -68,7 +73,7 @@ export function Welcome({
               />
             }
           >
-            <Await resolve={books}>
+            <Await resolve={cachedBooks}>
               {(resolvedBooks) => {
                 const bookItems: BookItem[] = resolvedBooks.map((it) => ({
                   id: it.id,
@@ -83,11 +88,11 @@ export function Welcome({
                 }));
                 return <BookDisplay books={bookItems} />;
               }}
-            </Await>
-          </Suspense>
+              </Await>
+            </Suspense>
         </div>
         <img
-          src={r2Image("static_photos/footer_one.png")}
+          src={"photos/footer_one.png"}
           alt="Decorative footer illustration"
           className="w-full"
           loading="lazy"
@@ -97,13 +102,13 @@ export function Welcome({
       <section className="bg-[#f3e3dd] pt-20 pb-16">
         <div className="flex flex-col md:flex-row px-8 items-center justify-center w-full">
           <img
-            src={r2Image("static_photos/profile.png")}
+            src={"photos/profile.png"}
             alt="Author portrait"
             className="w-[40%]"
             loading="lazy"
           />
           <Suspense fallback={<LoadingWrapper variant="text" skeletonCount={1} />}>
-            <Await resolve={pageContent}>
+            <Await resolve={cachedPageContent}>
               {(resolvedContent) => {
                 if (!resolvedContent || resolvedContent.length === 0) return null;
                 const raw = resolvedContent[0].description ?? "";
@@ -147,15 +152,15 @@ export function Welcome({
         </div>
       </section>
 
-      <section className="bg-white pb-12 border-t border-gray-200 text-center text-sm text-[#426684] font-[IvyModeSemiBold]">
+        <section className="bg-white pb-12 border-t border-gray-200 text-center text-sm text-[#426684] font-[IvyModeSemiBold]">
         <img
-          src={r2Image("static_photos/footer_two.png")}
+          src={"photos/footer_two.png"}
           alt="Footer decorative image"
           className="w-full"
           loading="lazy"
         />
         <Suspense fallback={null}>
-          <Await resolve={testimonials}>
+          <Await resolve={cachedTestimonials}>
             {(resolvedTestimonials) => (
               <TestimonialCarousel testimonials={resolvedTestimonials} />
             )}
