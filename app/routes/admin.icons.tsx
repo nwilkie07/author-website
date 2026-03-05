@@ -1,6 +1,7 @@
 import type { Route } from "./+types/admin.icons";
 import { AdminNav } from "../components/AdminNav";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useFetcher } from "react-router";
 import { IconsService } from "../services/icons";
 import { listFiles, deleteFile } from "../utils/r2Client";
 import DragDropUploader from "../components/DragDropUploader";
@@ -129,26 +130,37 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 }
 
-function IconForm({ 
-  icon, 
+function IconForm({
+  icon,
   onCancel,
-}: { 
+}: {
   icon?: { id: number; name: string; image_url: string; format: string };
   onCancel?: () => void;
 }) {
   const [name, setName] = useState(icon?.name || "");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const fetcher = useFetcher();
+  const isSubmitting = fetcher.state !== "idle";
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    if (fetcher.data) {
+      const result = fetcher.data as { success: boolean; error?: string };
+      if (result.success) {
+        window.location.reload();
+      } else {
+        alert(result.error || "Failed to save icon");
+      }
+    }
+  }, [fetcher.data]);
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name) {
       alert("Icon name is required");
       return;
     }
-    
-    setIsSubmitting(true);
+
     const formData = new FormData();
     formData.append("intent", icon ? "update-icon" : "create-icon");
     if (icon) {
@@ -158,23 +170,8 @@ function IconForm({
     if (selectedFile) {
       formData.append("file", selectedFile);
     }
-    
-    try {
-      const resp = await fetch(window.location.pathname, {
-        method: "POST",
-        body: formData,
-      });
-      const result: { success: boolean; error?: string } = await resp.json();
-      if (result.success) {
-        window.location.reload();
-      } else {
-        alert(result.error || "Failed to save icon");
-      }
-    } catch {
-      alert("Failed to save icon");
-    } finally {
-      setIsSubmitting(false);
-    }
+
+    fetcher.submit(formData, { method: "POST", encType: "multipart/form-data" });
   };
 
   return (

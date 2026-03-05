@@ -2,7 +2,8 @@ import type { Route } from "./+types/admin.books";
 import { BooksService } from "../services/books";
 import type { Book, PurchaseLink } from "../types/db";
 import { AdminNav } from "../components/AdminNav";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { useFetcher } from "react-router";
 import { r2Image } from "../utils/images";
 import { listFiles } from "../utils/r2Client";
 import DragDropUploader from "../components/DragDropUploader";
@@ -300,91 +301,62 @@ function BookForm({ book, onCancel }: { book?: Book; onCancel?: () => void }) {
   const [dragPreview, setDragPreview] = useState<string | null>(null);
   const [bookName, setBookName] = useState<string | null>(book?.name || null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
   const [seriesTitle, setSeriesName] = useState(book?.series_title || "");
   const [seriesNumber, setSeriesNumber] = useState(book?.series_number?.toString() || "");
   const [byLine, setByLine] = useState<string>(book?.by_line || "");
   const [altText, setAltText] = useState<string>(book?.alt_text || "");
 
-  const uploadImage = async (file: File): Promise<string | null> => {
-    const formData = new FormData();
-    formData.append("intent", "upload-image");
-    formData.append("file", file);
-    const nameInput = document.querySelector(
-      'input[name="name"]',
-    ) as HTMLInputElement | null;
-    if (nameInput?.value) {
-      formData.append("name", nameInput.value);
-    }
-    try {
-      const response = await fetch(window.location.pathname, {
-        method: "POST",
-        body: formData,
-      });
-      let result: { success: boolean; imageUrl?: string; error?: string } | undefined;
-      try {
-        result = (await response.json()) as {
-          success: boolean;
-          imageUrl?: string;
-          error?: string;
-        };
-      } catch {
-        alert("Upload failed - could not parse server response");
-        return null;
-      }
-      if (result?.success && result.imageUrl) {
-        return result.imageUrl;
+  const uploadFetcher = useFetcher();
+  const bookFetcher = useFetcher();
+  const pendingBookData = useRef<FormData | null>(null);
+
+  const isUploading = uploadFetcher.state !== "idle" || bookFetcher.state !== "idle";
+
+  // When image upload completes, submit the book form with the returned URL
+  useEffect(() => {
+    if (uploadFetcher.data && pendingBookData.current) {
+      const result = uploadFetcher.data as { success: boolean; imageUrl?: string; error?: string };
+      if (result.success && result.imageUrl) {
+        pendingBookData.current.set("imageUrl", result.imageUrl);
+        bookFetcher.submit(pendingBookData.current, { method: "POST", encType: "multipart/form-data" });
       } else {
-        alert(result?.error || "Upload failed");
-        return null;
+        alert(result.error || "Upload failed");
       }
-    } catch {
-      alert("Upload failed");
-      return null;
+      pendingBookData.current = null;
     }
-  };
+  }, [uploadFetcher.data]);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  // When book save completes
+  useEffect(() => {
+    if (bookFetcher.data) {
+      const result = bookFetcher.data as { success: boolean; error?: string };
+      if (result.success) {
+        window.location.reload();
+      } else {
+        alert(result.error || "Failed to save book");
+      }
+    }
+  }, [bookFetcher.data]);
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsUploading(true);
-
-    let finalImageUrl = imageUrl;
-
-    if (selectedFile) {
-      const uploadedUrl = await uploadImage(selectedFile);
-      if (uploadedUrl) {
-        finalImageUrl = uploadedUrl;
-      }
-    }
 
     const form = e.currentTarget;
     const formData = new FormData(form);
     formData.set("intent", intent);
-    formData.set("imageUrl", finalImageUrl);
+    formData.set("imageUrl", imageUrl);
     formData.set("byLine", byLine);
     formData.set("altText", altText);
 
-    try {
-      const response = await fetch(window.location.pathname, {
-        method: "POST",
-        body: formData,
-      });
-      let result: { success: boolean; error?: string } | undefined;
-      try {
-        result = (await response.json()) as { success: boolean; error?: string };
-      } catch {
-        alert("Failed to save book - could not parse server response");
-        return;
-      }
-      if (result?.success) {
-        window.location.reload();
-      } else {
-        alert(result?.error || "Failed to save book");
-      }
-    } catch {
-      alert("Failed to save book");
-    } finally {
-      setIsUploading(false);
+    if (selectedFile) {
+      const uploadData = new FormData();
+      uploadData.append("intent", "upload-image");
+      uploadData.append("file", selectedFile);
+      if (bookName) uploadData.append("name", bookName);
+      pendingBookData.current = formData;
+      uploadFetcher.submit(uploadData, { method: "POST", encType: "multipart/form-data" });
+    } else {
+      bookFetcher.submit(formData, { method: "POST", encType: "multipart/form-data" });
     }
   };
 
@@ -549,43 +521,26 @@ function PurchaseLinkForm({
 }) {
   const intent = link ? "update-purchase-link" : "create-purchase-link";
   const [iconUrl, setIconUrl] = useState<string>(link?.icon_url ?? "");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [storeName, setStoreName] = useState<string>(link?.store_name || "");
-  const handleSubmit = async (e: any) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    try {
-      const form = e.currentTarget as HTMLFormElement;
-      const formData = new FormData(form);
-      const resp = await fetch(window.location.pathname, {
-        method: "POST",
-        body: formData,
-      });
-      let result:
-        | { success: boolean; error?: string; key?: string }
-        | undefined;
-      try {
-        result = (await resp.json()) as {
-          success: boolean;
-          error?: string;
-          key?: string;
-        };
-      } catch {
-        if (resp.ok) {
-          window.location.reload();
-          return;
-        }
-        alert("Upload failed");
-        return;
-      }
-      if (result?.success) {
+  const fetcher = useFetcher();
+  const isSubmitting = fetcher.state !== "idle";
+
+  useEffect(() => {
+    if (fetcher.data) {
+      const result = fetcher.data as { success: boolean; error?: string };
+      if (result.success) {
         window.location.reload();
       } else {
-        alert(result?.error || "Upload failed");
+        alert(result.error || "Upload failed");
       }
-    } finally {
-      setIsSubmitting(false);
     }
+  }, [fetcher.data]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const form = e.currentTarget as HTMLFormElement;
+    const formData = new FormData(form);
+    fetcher.submit(formData, { method: "POST", encType: "multipart/form-data" });
   };
   return (
     <form
