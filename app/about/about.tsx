@@ -14,7 +14,7 @@ export default function About({
   message: string;
   pageContent: PageContent[] | Promise<PageContent[]>;
 }) {
-  const cachedPageContent = useDataCache<PageContent[]>("about_page_content", pageContent);
+  const cachedPageContent = useDataCache<PageContent[]>("about_page_content", pageContent, 1000 * 60 * 60);
   const cachedPageContentSync = readFromCacheSync<PageContent[]>("about_page_content");
 
   return (

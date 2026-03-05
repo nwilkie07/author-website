@@ -26,7 +26,7 @@ export function Welcome({
   const { isMobile } = useScreenSize();
   const cachedPageContent = usePageContentCache("home", pageContent);
   const cachedBooks = useDataCache<BookWithPurchaseLinks[]>("books", books);
-  const cachedTestimonials = useDataCache<Testimonial[]>("home_testimonials", testimonials);
+  const cachedTestimonials = useDataCache<Testimonial[]>("home_testimonials", testimonials,  1000 * 60 * 60);
 
   return (
     <div>
@@ -66,9 +66,8 @@ export function Welcome({
           <Suspense
             fallback={
               <LoadingWrapper
-                variant="grid"
-                className="grid-cols-1 md:grid-cols-3 m-8"
-                skeletonCount={isMobile ? 3 : 9}
+                variant="carousel"
+                className="flex w-[100vw]"
               />
             }
           >
@@ -158,7 +157,7 @@ export function Welcome({
           className="w-full"
           loading="lazy"
         />
-        <Suspense fallback={null}>
+        <Suspense fallback={<LoadingWrapper variant="text" skeletonCount={1} />}>
           <Await resolve={cachedTestimonials}>
             {(resolvedTestimonials) => (
               <TestimonialCarousel testimonials={resolvedTestimonials} />

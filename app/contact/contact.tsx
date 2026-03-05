@@ -30,7 +30,7 @@ export default function Contact({
   message: string;
   pageContent: PageContent[] | Promise<PageContent[]>;
 }) {
-  const cachedPageContent = usePageContentCache("contact", pageContent);
+  const cachedPageContent = usePageContentCache("contact", pageContent,  1000 * 60 * 60);
   const cachedPageContentSync = readFromCacheSync<PageContent[]>("pageContent_v1_contact");
   
   const [fname, setFname] = useState("");

@@ -13,6 +13,9 @@
   --color-success: #16a34a;
   --color-black: #000;
   --color-white: #fff;
+  /* Focus shadows */
+  --shadow-focus-primary: 0 0 0 3px #ff6b3340;
+  --shadow-focus-danger: 0 0 0 3px #ff4d5540;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -29,7 +32,4 @@
     --color-danger-hover: #ef4444;
     --color-success: #22c55e;
   }
-  /* Focus shadows continue to use CSS vars if needed by components */
-  --shadow-focus-primary: 0 0 0 3px #ff6b3340;
-  --shadow-focus-danger: 0 0 0 3px #ff4d5540;
 }

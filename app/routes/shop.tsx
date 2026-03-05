@@ -35,10 +35,17 @@ export function loader({ context }: Route.LoaderArgs) {
 export type { BookItem, SeriesGroup } from "~/types/books";
 
 export default function Shop({ loaderData }: Route.ComponentProps) {
-  const booksPromise = (loaderData as unknown as { books: Promise<BookWithPurchaseLinks[]> }).books;  
+  const booksPromise = (
+    loaderData as unknown as { books: Promise<BookWithPurchaseLinks[]> }
+  ).books;
   // Cache books data on the client to avoid skeletons on subsequent navigations
-  const cachedBooks = useDataCache<BookWithPurchaseLinks[]>("shop_books", booksPromise);
-  const cachedBooksSync = readFromCacheSync<BookWithPurchaseLinks[]>("shop_books");
+  const cachedBooks = useDataCache<BookWithPurchaseLinks[]>(
+    "shop_books",
+    booksPromise,
+    1000 * 60 * 60,
+  );
+  const cachedBooksSync =
+    readFromCacheSync<BookWithPurchaseLinks[]>("shop_books");
 
   return (
     <div>
@@ -69,11 +76,7 @@ export default function Shop({ loaderData }: Route.ComponentProps) {
           ) : (
             <Suspense
               fallback={
-                <LoadingWrapper
-                  variant="grid"
-                  className="grid-cols-1 md:grid-cols-3 m-8"
-                  skeletonCount={3}
-                />
+                <LoadingWrapper variant="carousel" className="flex w-[100vw]" />
               }
             >
               <Await resolve={cachedBooks}>

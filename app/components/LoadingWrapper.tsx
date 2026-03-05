@@ -1,8 +1,9 @@
 import React from "react";
 import { SkeletonImage, SkeletonLine, SkeletonTextBlock } from "./Skeleton";
+import { useScreenSize } from "~/hooks/useScreenSize";
 
 type LoadingWrapperProps = {
-  variant?: "card" | "grid" | "section" | "text";
+  variant?: "card" | "grid" | "section" | "text" | "carousel";
   skeletonCount?: number;
   className?: string;
 };
@@ -28,6 +29,7 @@ export const LoadingWrapper: React.FC<LoadingWrapperProps> = ({
   skeletonCount = 3,
   className = "",
 }) => {
+  const { isDesktop } = useScreenSize();
   switch (variant) {
     case "grid":
       return (
@@ -42,6 +44,46 @@ export const LoadingWrapper: React.FC<LoadingWrapperProps> = ({
               <SkeletonLine height={12} width="80%" />
             </div>
           ))}
+        </div>
+      );
+    case "carousel":
+      return (
+        <div className={className + "flex w-full justify-center py-8"}>
+          <div className="flex gap-4 h-auto overflow-x-auto py-2 px-8 w-[80%] justify-center">
+            <div
+              className={
+                "flex flex-col min-w-full max-w-full lg:flex-row lg:min-w-[900px] lg:max-w-[900px] h-auto bg-white rounded-lg p-4 gap-4 lg:gap-16 webkit-fill-available"
+              }
+              style={{
+                scrollSnapAlign: "start",
+              }}
+            >
+              <div className="flex justify-center grow-1 pl-8 pb-8">
+                <SkeletonImage
+                  height={isDesktop ? 500 : 300}
+                  width={isDesktop ? "300px" : "200px"}
+                />
+              </div>
+              <div className="flex flex-col gap-4 lg:m-4 h-auto px-6 grow-3">
+                <div className="flex w-full justify-center">
+                  <SkeletonLine height={20} width="80%" />
+                </div>
+                <div className="flex w-full justify-center">
+                  <SkeletonLine height={14} width="60%" />
+                </div>
+                <div className="flex w-full justify-center">
+                  <SkeletonLine height={14} width="60%" />
+                </div>
+                <div
+                  className="h-[30vh] lg:h-auto"
+                  style={{ maxWidth: "100%" }}
+                >
+                  <SkeletonTextBlock lines={8} />
+                </div>
+                <button className="mt-auto bg-black px-6 py-3 rounded-full flex-end w-[50%] h-[50px] self-center rounded animate-pulse"></button>
+              </div>
+            </div>
+          </div>
         </div>
       );
     case "card":

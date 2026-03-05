@@ -217,7 +217,7 @@ export default function Emails({ loaderData }: Route.ComponentProps) {
   };
 
   // Client-side cache for newsletters campaigns
-  const cachedCampaigns = useDataCache<CampaignWithContent[]>("emails_campaigns", campaigns);
+  const cachedCampaigns = useDataCache<CampaignWithContent[]>("emails_campaigns", campaigns,  1000 * 60 * 60);
   const cachedCampaignsSync = readFromCacheSync<CampaignWithContent[]>("emails_campaigns");
 
   const [selectedCampaign, setSelectedCampaign] =

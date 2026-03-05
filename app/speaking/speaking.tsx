@@ -15,7 +15,7 @@ export default function Speaking({
   message: string;
   pageContent: PageContent[] | Promise<PageContent[]>;
 }) {
-  const cachedPageContent = useDataCache<PageContent[]>("speaking_page_content", pageContent);
+  const cachedPageContent = useDataCache<PageContent[]>("speaking_page_content", pageContent,  1000 * 60 * 60);
   const cachedPageContentSync = readFromCacheSync<PageContent[]>("speaking_page_content");
 
   return (
