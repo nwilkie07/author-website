@@ -15,6 +15,7 @@ build/
 .vscode/
 .superset/
 .wrangler/
+/public/photos/
 
 # Cloudflare
 .wrangler/

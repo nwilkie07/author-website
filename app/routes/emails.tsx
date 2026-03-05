@@ -5,7 +5,8 @@ import {
 } from "../services/mailchimp";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { Await } from "react-router";
 import LoadingWrapper from "~/components/LoadingWrapper";
 
 function sanitizeHtml(html: string): string {
@@ -34,58 +35,65 @@ const dateOptions: Intl.DateTimeFormatOptions = {
   day: "numeric",
 };
 
-export async function loader({ context }: Route.LoaderArgs) {
-  const apiKey = context.cloudflare.env.MAIL_CHIMP_API;
-
-  if (!apiKey) {
-    return { campaigns: [], error: "Mailchimp API key not configured" };
-  }
-
-  function extractMcnTextContent(html: string): string[] {
-    const results: string[] = [];
-    const regex =
-      /<[^>]*class="[^"]*mcnTextContent[^"]*"[^>]*>([\s\S]*?)<\/[^>]*>/gi;
-    let match;
-    while ((match = regex.exec(html)) !== null) {
-      results.push(match[1]);
-    }
-    return results;
-  }
-
-  try {
-    const mailchimp = new MailchimpService(apiKey);
-    const campaigns = await mailchimp.getCampaigns();
-
-    const campaignsWithContent = await Promise.all(
-      campaigns.map(async (campaign) => {
-        try {
-          const content = await mailchimp.getCampaignContent(campaign.id);
-          if (content) {
-            const parsed = extractMcnTextContent(content);
-            return {
-              ...campaign,
-              parsedContent: parsed,
-              originalContent: content,
-            };
-          }
-        } catch (e) {
-          console.error("Failed to parse campaign content:", campaign.id, e);
-        }
-        return { ...campaign, parsedContent: null, originalContent: null };
-      }),
-    );
-
-    return { campaigns: campaignsWithContent, error: null };
-  } catch (error) {
-    console.error("Failed to fetch campaigns:", error);
-    return { campaigns: [], error: "Failed to fetch campaigns" };
-  }
-}
-
+// The shape of each campaign once content has been resolved
 type CampaignWithContent = MailchimpCampaign & {
   parsedContent: string[] | null;
   originalContent: string | null;
 };
+
+function extractMcnTextContent(html: string): string[] {
+  const results: string[] = [];
+  const regex =
+    /<[^>]*class="[^"]*mcnTextContent[^"]*"[^>]*>([\s\S]*?)<\/[^>]*>/gi;
+  let match;
+  while ((match = regex.exec(html)) !== null) {
+    results.push(match[1]);
+  }
+  return results;
+}
+
+export function loader({ context }: Route.LoaderArgs) {
+  const apiKey = context.cloudflare.env.MAIL_CHIMP_API;
+  const kv = context.cloudflare.env.KV_CACHE;
+
+  if (!apiKey) {
+    return { campaigns: Promise.resolve([]) as Promise<CampaignWithContent[]>, error: "Mailchimp API key not configured" };
+  }
+
+  const mailchimp = new MailchimpService(apiKey, kv);
+
+  // Fetch the campaign list and their content as a single deferred promise.
+  // getCampaigns() is nearly instant after a KV warm-up; getCampaignContent()
+  // calls are all KV hits too, but we still defer the whole thing so the page
+  // shell (Navbar, header, Footer) renders and streams to the client immediately.
+  const campaignsPromise: Promise<CampaignWithContent[]> = mailchimp
+    .getCampaigns()
+    .then((campaigns) =>
+      Promise.all(
+        campaigns.map(async (campaign) => {
+          try {
+            const content = await mailchimp.getCampaignContent(campaign.id);
+            if (content) {
+              return {
+                ...campaign,
+                parsedContent: extractMcnTextContent(content),
+                originalContent: content,
+              };
+            }
+          } catch (e) {
+            console.error("Failed to parse campaign content:", campaign.id, e);
+          }
+          return { ...campaign, parsedContent: null, originalContent: null };
+        }),
+      ),
+    )
+    .catch((error) => {
+      console.error("Failed to fetch campaigns:", error);
+      return [];
+    });
+
+  return { campaigns: campaignsPromise, error: null };
+}
 
 function stripHtml(html: string): string {
   return html
@@ -152,15 +160,63 @@ function EmailModal({
   );
 }
 
+function CampaignGrid({
+  campaigns,
+  onSelect,
+}: {
+  campaigns: CampaignWithContent[];
+  onSelect: (c: CampaignWithContent) => void;
+}) {
+  if (campaigns.length === 0) {
+    return (
+      <div className="text-center text-gray-500 py-8">No emails found.</div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {campaigns.map((campaign) => (
+        <button
+          key={campaign.id}
+          onClick={() => onSelect(campaign)}
+          className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow text-left hover:cursor-pointer flex flex-col gap-2 h-[12rem]"
+        >
+          <div className="flex flex-col h-full gap-3">
+            <div className="text-sm text-gray-500">
+              {campaign.send_time
+                ? new Date(campaign.send_time).toLocaleDateString(
+                    [],
+                    dateOptions,
+                  )
+                : campaign.status}
+            </div>
+            {campaign.parsedContent !== null &&
+              campaign.parsedContent[0] !== null && (
+                <h3 className="font-semibold text-lg text-[#25384F]">
+                  {stripHtml(campaign.parsedContent[0])}
+                </h3>
+              )}
+            {campaign.parsedContent !== null &&
+              campaign.parsedContent[1] !== null && (
+                <p className="text-sm text-gray-600 line-clamp-2 mt-auto">
+                  {stripHtml(campaign.parsedContent[1])}
+                </p>
+              )}
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function Emails({ loaderData }: Route.ComponentProps) {
-  const { campaigns, error } = (loaderData as {
-    campaigns: CampaignWithContent[];
+  const { campaigns, error } = (loaderData as unknown) as {
+    campaigns: Promise<CampaignWithContent[]>;
     error: string | null;
-  }) || { campaigns: [], error: null };
+  };
+
   const [selectedCampaign, setSelectedCampaign] =
     useState<CampaignWithContent | null>(null);
-
-    const isLoading = !campaigns || campaigns.length === 0; 
 
   return (
     <div>
@@ -183,51 +239,24 @@ export default function Emails({ loaderData }: Route.ComponentProps) {
             <div className="text-center text-red-500 py-8">{error}</div>
           )}
 
-          {!error && campaigns.length === 0 && (
-            <div className="text-center text-gray-500 py-8">
-              No emails found.
-            </div>
-          )}
-          <LoadingWrapper
-            isLoading={isLoading}
-            variant="grid"
-            className="grid-cols-3"
-            skeletonCount={8}
+          <Suspense
+            fallback={
+              <LoadingWrapper
+                variant="grid"
+                className="grid-cols-3"
+                skeletonCount={8}
+              />
+            }
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {campaigns.map((campaign) => (
-                <button
-                  key={campaign.id}
-                  onClick={() => setSelectedCampaign(campaign)}
-                  className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow text-left hover:cursor-pointer hover:shadow-lg flex flex-col gap-2 h-[12rem]"
-                >
-                  <div className="flex flex-col h-full gap-3">
-                    <div className="text-sm text-gray-500">
-                      {campaign.send_time
-                        ? new Date(campaign.send_time).toLocaleDateString(
-                            [],
-                            dateOptions,
-                          )
-                        : campaign.status}
-                    </div>
-                    {campaign.parsedContent !== null &&
-                      campaign.parsedContent[0] !== null && (
-                        <h3 className="font-semibold text-lg text-[#25384F]">
-                          {stripHtml(campaign.parsedContent[0])}
-                        </h3>
-                      )}
-                    {campaign.parsedContent !== null &&
-                      campaign.parsedContent[1] !== null && (
-                        <p className="text-sm text-gray-600 line-clamp-2 mt-auto">
-                          {stripHtml(campaign.parsedContent[1])}
-                        </p>
-                      )}
-                  </div>
-                </button>
-              ))}
-            </div>
-            Ò
-          </LoadingWrapper>
+            <Await resolve={campaigns}>
+              {(resolvedCampaigns) => (
+                <CampaignGrid
+                  campaigns={resolvedCampaigns}
+                  onSelect={setSelectedCampaign}
+                />
+              )}
+            </Await>
+          </Suspense>
         </div>
       </section>
 

@@ -13,6 +13,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   }
 
   const apiKey = context.cloudflare.env.MAIL_CHIMP_API;
+  const kv = context.cloudflare.env.KV_CACHE;
 
   if (!apiKey) {
     return new Response(JSON.stringify({ error: "API key not configured" }), {
@@ -22,7 +23,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   }
 
   try {
-    const mailchimp = new MailchimpService(apiKey);
+    const mailchimp = new MailchimpService(apiKey, kv);
     const content = await mailchimp.getCampaignContent(campaignId);
 
     if (!content) {

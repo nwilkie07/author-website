@@ -14,69 +14,25 @@ export type MailchimpCampaign = {
   reply_to: string;
 };
 
-type CacheEntry<T> = {
-  data: T;
-  timestamp: number;
-};
-
 const CAMPAIGNS_CACHE_KEY = "mailchimp_campaigns";
 const CONTENT_CACHE_PREFIX = "mailchimp_content_";
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
-
-class InMemoryCache {
-  private cache: Map<string, CacheEntry<any>> = new Map();
-
-  get<T>(key: string): T | null {
-    const entry = this.cache.get(key);
-    if (!entry) return null;
-
-    if (Date.now() - entry.timestamp > CACHE_TTL_MS) {
-      this.cache.delete(key);
-      return null;
-    }
-
-    return entry.data as T;
-  }
-
-  set<T>(key: string, data: T): void {
-    this.cache.set(key, { data, timestamp: Date.now() });
-  }
-
-  delete(key: string): void {
-    this.cache.delete(key);
-  }
-
-  getWithMetadata<T>(key: string): { data: T | null; timestamp: number } {
-    const entry = this.cache.get(key);
-    if (!entry) return { data: null, timestamp: 0 };
-
-    if (Date.now() - entry.timestamp > CACHE_TTL_MS) {
-      this.cache.delete(key);
-      return { data: null, timestamp: 0 };
-    }
-
-    return { data: entry.data as T, timestamp: entry.timestamp };
-  }
-
-  setWithMetadata<T>(key: string, data: T): void {
-    this.cache.set(key, { data, timestamp: Date.now() });
-  }
-}
-
-const globalCache = new InMemoryCache();
+// KV TTL in seconds (1 hour). KV handles expiry natively — no timestamp math needed.
+const CACHE_TTL_SECONDS = 60 * 60;
 
 export class MailchimpService {
   private apiKey: string;
   private serverPrefix: string;
+  private kv: KVNamespace | null;
 
-  constructor(apiKey: string) {
+  constructor(apiKey: string, kv?: KVNamespace) {
     this.apiKey = apiKey;
     this.serverPrefix = apiKey.split("-").pop() || "us1";
+    this.kv = kv ?? null;
   }
 
   private async fetchMailchimp(endpoint: string, options: RequestInit = {}): Promise<any> {
     const url = `https://${this.serverPrefix}.api.mailchimp.com/3.0${endpoint}`;
-    
+
     const response = await fetch(url, {
       ...options,
       headers: {
@@ -96,15 +52,22 @@ export class MailchimpService {
 
   async getCampaigns(limit: number = 10): Promise<MailchimpCampaign[]> {
     const cacheKey = `${CAMPAIGNS_CACHE_KEY}_${limit}`;
-    
-    const cached = globalCache.get<MailchimpCampaign[]>(cacheKey);
-    if (cached) {
-      return cached;
+
+    // Check KV cache first
+    if (this.kv) {
+      try {
+        const cached = await this.kv.get<MailchimpCampaign[]>(cacheKey, "json");
+        if (cached) return cached;
+      } catch (e) {
+        console.error("KV get error (campaigns):", e);
+      }
     }
 
     try {
-      const data = await this.fetchMailchimp(`/campaigns?count=${limit}&sort_field=send_time&sort_dir=DESC&status=sent`);
-      
+      const data = await this.fetchMailchimp(
+        `/campaigns?count=${limit}&sort_field=send_time&sort_dir=DESC&status=sent`
+      );
+
       const campaigns: MailchimpCampaign[] = (data.campaigns || []).map((campaign: any) => ({
         id: campaign.id,
         web_id: campaign.web_id,
@@ -121,8 +84,13 @@ export class MailchimpService {
         reply_to: campaign.settings?.reply_to || "",
       }));
 
-      globalCache.set(cacheKey, campaigns);
-      
+      // Write to KV cache (fire-and-forget; don't block the response)
+      if (this.kv) {
+        this.kv
+          .put(cacheKey, JSON.stringify(campaigns), { expirationTtl: CACHE_TTL_SECONDS })
+          .catch((e) => console.error("KV put error (campaigns):", e));
+      }
+
       return campaigns;
     } catch (error) {
       console.error("Failed to fetch Mailchimp campaigns:", error);
@@ -132,20 +100,28 @@ export class MailchimpService {
 
   async getCampaignContent(campaignId: string): Promise<string | null> {
     const cacheKey = `${CONTENT_CACHE_PREFIX}${campaignId}`;
-    
-    const cached = globalCache.get<string>(cacheKey);
-    if (cached) {
-      return cached;
+
+    // Check KV cache first
+    if (this.kv) {
+      try {
+        const cached = await this.kv.get(cacheKey, "text");
+        if (cached) return cached;
+      } catch (e) {
+        console.error(`KV get error (content ${campaignId}):`, e);
+      }
     }
 
     try {
       const data = await this.fetchMailchimp(`/campaigns/${campaignId}/content`);
-      const content = data.html || null;
-      
-      if (content) {
-        globalCache.set(cacheKey, content);
+      const content: string | null = data.html || null;
+
+      // Write to KV cache (fire-and-forget)
+      if (content && this.kv) {
+        this.kv
+          .put(cacheKey, content, { expirationTtl: CACHE_TTL_SECONDS })
+          .catch((e) => console.error(`KV put error (content ${campaignId}):`, e));
       }
-      
+
       return content;
     } catch (error) {
       console.error(`Failed to fetch content for campaign ${campaignId}:`, error);
@@ -155,21 +131,41 @@ export class MailchimpService {
 
   async refreshCampaigns(limit: number = 10): Promise<MailchimpCampaign[]> {
     const cacheKey = `${CAMPAIGNS_CACHE_KEY}_${limit}`;
-    
-    globalCache.delete(cacheKey);
+    if (this.kv) {
+      await this.kv.delete(cacheKey).catch(() => {});
+    }
     return this.getCampaigns(limit);
   }
 
   async refreshCampaignContent(campaignId: string): Promise<string | null> {
     const cacheKey = `${CONTENT_CACHE_PREFIX}${campaignId}`;
-    
-    globalCache.delete(cacheKey);
+    if (this.kv) {
+      await this.kv.delete(cacheKey).catch(() => {});
+    }
     return this.getCampaignContent(campaignId);
   }
 
-  async subscribe(listId: string, email: string, firstName: string, lastName: string): Promise<{ success: boolean; error?: string }> {
+  /**
+   * Pre-warms the KV cache with campaign list and content for all campaigns.
+   * Only fetches from Mailchimp for entries that are not already cached.
+   * Intended to be called via ctx.waitUntil() so it runs in the background
+   * without blocking any page response.
+   */
+  async warmCache(limit: number = 10): Promise<void> {
+    if (!this.kv) return;
+
+    const campaigns = await this.getCampaigns(limit);
+    await Promise.all(campaigns.map((c) => this.getCampaignContent(c.id)));
+  }
+
+  async subscribe(
+    listId: string,
+    email: string,
+    firstName: string,
+    lastName: string
+  ): Promise<{ success: boolean; error?: string }> {
     try {
-      const data = await this.fetchMailchimp(`/lists/${listId}/members`, {
+      await this.fetchMailchimp(`/lists/${listId}/members`, {
         method: "POST",
         body: JSON.stringify({
           email_address: email,

@@ -87,10 +87,11 @@ export function Modal({ isOpen, onClose, title, purchaseLinks, bookTitle }: Moda
                 }}
               >
                 {link.icon_url ? (
-                <img 
+                 <img 
                 src={r2Image(link.icon_url)} 
                 alt={`Icon for ${link.store_name}`}
                 className="w-10 h-10 object-contain"
+                loading="lazy"
               />
                 ) : (
                   <div className="w-10 h-10 bg-gray-300 rounded flex items-center justify-center">

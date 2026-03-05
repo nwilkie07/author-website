@@ -7,8 +7,8 @@ export type BookItem = {
   description: string | null;
   seriesTitle: string | null;
   seriesNumber: number | null;
-  byLine: string;
-  alt_text: string;
+  byLine: string | null;
+  alt_text: string | null;
   purchaseLinks: PurchaseLink[];
 };
 

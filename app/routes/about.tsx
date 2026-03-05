@@ -1,23 +1,23 @@
 import React from "react";
 import type { Route } from "./+types/about";
 import AboutComp from "../about/about";
-import type { PageContent } from "~/types/db";
 import { PageContentService } from "~/services/pageContent";
+import type { PageContent } from "~/types/db";
 
-export async function loader({ context }: Route["LoaderArgs"]) {
+export function loader({ context }: Route["LoaderArgs"]) {
   const db = context.cloudflare.env.DB;
   const pageContentService = new PageContentService(db);
-  
-  let pageContent: PageContent[] = [];
-  try {
-    pageContent = await pageContentService.getContentByPage("about");
-  } catch (error) {
-    console.error("Failed to fetch content.", error);
-  }
-  
-  return { 
+
+  const pageContentPromise: Promise<PageContent[]> = pageContentService
+    .getContentByPage("about")
+    .catch((error) => {
+      console.error("Failed to fetch content.", error);
+      return [];
+    });
+
+  return {
     message: context.cloudflare.env.VALUE_FROM_CLOUDFLARE,
-    pageContent
+    pageContent: pageContentPromise,
   };
 }
 

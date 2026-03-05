@@ -6,6 +6,9 @@ import { Footer } from "../components/Footer";
 import { BookDisplay } from "../components/BookDisplay";
 import { r2Image } from "~/utils/images";
 import type { BookItem } from "~/types/books";
+import { Suspense } from "react";
+import { Await } from "react-router";
+import LoadingWrapper from "~/components/LoadingWrapper";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -14,28 +17,24 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export async function loader({ context }: Route.LoaderArgs) {
+export function loader({ context }: Route.LoaderArgs) {
   const db = context.cloudflare.env.DB;
   const service = new BooksService(db);
-  const books = await service.getAllBooksWithPurchaseLinks();
-  return { books };
+
+  const booksPromise: Promise<BookWithPurchaseLinks[]> = service
+    .getAllBooksWithPurchaseLinks()
+    .catch((error) => {
+      console.error("Failed to fetch books:", error);
+      return [];
+    });
+
+  return { books: booksPromise };
 }
 
 export type { BookItem, SeriesGroup } from "~/types/books";
 
 export default function Shop({ loaderData }: Route.ComponentProps) {
-  const books = (loaderData?.books ?? []) as BookWithPurchaseLinks[];
-  const bookItems: BookItem[] = books.map((it) => ({
-    id: it.id,
-    name: it.name,
-    imageUrl: r2Image(it.image_url),
-    description: it.description,
-    seriesTitle: it.series_title,
-    seriesNumber: it.series_number,
-    byLine: it.by_line,
-    alt_text: it.alt_text ?? "",
-    purchaseLinks: it.purchase_links as PurchaseLink[],
-  }));
+  const booksPromise = (loaderData as unknown as { books: Promise<BookWithPurchaseLinks[]> }).books;
 
   return (
     <div>
@@ -47,7 +46,32 @@ export default function Shop({ loaderData }: Route.ComponentProps) {
           </h1>
         </div>
         <div className="flex flex-col">
-          <BookDisplay books={bookItems} isLoading={books.length === 0} />
+          <Suspense
+            fallback={
+              <LoadingWrapper
+                variant="grid"
+                className="grid-cols-1 md:grid-cols-3 m-8"
+                skeletonCount={3}
+              />
+            }
+          >
+            <Await resolve={booksPromise}>
+              {(books) => {
+                const bookItems: BookItem[] = books.map((it) => ({
+                  id: it.id,
+                  name: it.name,
+                  imageUrl: r2Image(it.image_url),
+                  description: it.description,
+                  seriesTitle: it.series_title,
+                  seriesNumber: it.series_number,
+                  byLine: it.by_line ?? "",
+                  alt_text: it.alt_text ?? "",
+                  purchaseLinks: it.purchase_links as PurchaseLink[],
+                }));
+                return <BookDisplay books={bookItems} />;
+              }}
+            </Await>
+          </Suspense>
         </div>
       </section>
       <Footer showNewsletter={false} />

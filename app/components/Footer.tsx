@@ -139,9 +139,10 @@ export function Footer({
         <div className="container mx-auto px-3 sm:px-6 flex flex-col lg:flex-row justify-between items-center gap-4">
           <div>
             <img
-              src={r2Image("static_photos/author_logo.png")}
+              src={"photos/author_logo.png"}
               alt="Author logo of a fairy and the name Karen MacLeod-Wilkie"
               className="w-32 h-12"
+              loading="lazy"
             />
           </div>
           <div className="flex grow-3 gap-3 text-[#E3D2CB] text-xl justify-center">
@@ -151,6 +152,7 @@ export function Footer({
                   <React.Fragment key={link.to}>
                     <Link
                       to={link.to}
+                      prefetch="intent"
                       className="hover:underline hover:cursor-pointer"
                     >
                       {isTablet ? link.label.split(" ")[0] : link.label}
@@ -161,22 +163,22 @@ export function Footer({
               </div>
             ) : (
               <div className="flex gap-8 p-8">
-                <Link to="/">
+                <Link to="/" prefetch="intent">
                   <House />
                 </Link>
-                <Link to="/about" className="flex gap-8 stroke-white">
+                <Link to="/about" prefetch="intent" className="flex gap-8 stroke-white">
                   <CircleUserRound />
                 </Link>
-                <Link to="/email">
+                <Link to="/email" prefetch="intent">
                   <Newspaper />
                 </Link>
-                <Link to="/speaking">
+                <Link to="/speaking" prefetch="intent">
                   <Mic />
                 </Link>
-                <Link to="/contact">
+                <Link to="/contact" prefetch="intent">
                   <Mail />
                 </Link>
-                <Link to="/shop">
+                <Link to="/shop" prefetch="intent">
                   <ShoppingBasket />
                 </Link>
               </div>

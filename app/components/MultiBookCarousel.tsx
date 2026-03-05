@@ -44,6 +44,7 @@ export const MultiBookCarousel: React.FC<Props> = ({
               style={{
                 width: imageWidth,
               }}
+              loading="lazy"
               onClick={() => {
                 // If consumer provided an image click handler, pass the current item
                 (onImageClick as any)?.(it);

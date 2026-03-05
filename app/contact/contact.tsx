@@ -1,10 +1,10 @@
-import { Link } from "react-router";
+import { Suspense, useState, useEffect } from "react";
+import { Await } from "react-router";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 import type { PageContent } from "~/types/db";
-import { LoadingWrapper } from "../components/LoadingWrapper";
+import LoadingWrapper from "~/components/LoadingWrapper";
 import { sanitizeHTML } from "../utils/sanitizeHTML";
-import { useState, useEffect } from "react";
 import { Facebook, Instagram } from "lucide-react";
 import { r2Image } from "~/utils/images";
 
@@ -24,13 +24,11 @@ declare global {
 
 export default function Contact({
   message,
-  pageContent = [],
+  pageContent,
 }: {
   message: string;
-  pageContent?: PageContent[];
+  pageContent: PageContent[] | Promise<PageContent[]>;
 }) {
-  const isLoading = !pageContent || pageContent.length === 0;
-
   const [fname, setFname] = useState("");
   const [lname, setLname] = useState("");
   const [email, setEmail] = useState("");
@@ -121,65 +119,60 @@ export default function Contact({
     <>
       <Navbar activePath="/contact" authorName="Karen MacLeod-Wilkie" />
       <section className="bg-[#f4e6df] pt-12">
-        <LoadingWrapper
-          isLoading={isLoading}
-          variant="grid"
-          skeletonCount={2}
-          className="grid-cols-2 m-6"
+        <Suspense
+          fallback={
+            <LoadingWrapper variant="grid" skeletonCount={2} className="grid-cols-2 m-6" />
+          }
         >
-          {!isLoading && (
-            <div className="container mx-auto px-6 flex flex-col w-full justify-center gap-8 items-center">
-              <div className="space-y-4 self-start">
-                <div className="text-2xl md:text-4xl text-[#25384F] font-[IvyModeBold] mb-6 text-left">
-                  {pageContent[0].title}
-                </div>
-              </div>
-              <div className="flex items-center justify-center">
-                <div className="flex flex-col w-full gap-4">
-                  <div
-                    className="flex text-[#25384F] text-base md:text-xl leading-relaxed gap-16 font-[AthelasBook] mb-4"
-                    dangerouslySetInnerHTML={{
-                      __html: sanitizeHTML(pageContent[0].description ?? ""),
-                    }}
-                  />
-
-                  <div className="w-full flex gap-4" aria-label="social-links">
-                    <a
-                      href="https://www.facebook.com/karenmacleodwilkiewriter"
-                      aria-label="Facebook"
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      <Facebook
-                        width={40}
-                        height={40}
-                        className="stroke-[#25384f]"
+          <Await resolve={pageContent}>
+            {(resolvedContent) =>
+              resolvedContent && resolvedContent.length > 0 ? (
+                <div className="container mx-auto px-6 flex flex-col w-full justify-center gap-8 items-center">
+                  <div className="space-y-4 self-start">
+                    <div className="text-2xl md:text-4xl text-[#25384F] font-[IvyModeBold] mb-6 text-left">
+                      {resolvedContent[0].title}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-center">
+                    <div className="flex flex-col w-full gap-4">
+                      <div
+                        className="flex text-[#25384F] text-base md:text-xl leading-relaxed gap-16 font-[AthelasBook] mb-4"
+                        dangerouslySetInnerHTML={{
+                          __html: sanitizeHTML(resolvedContent[0].description ?? ""),
+                        }}
                       />
-                    </a>
-                    <a
-                      href="https://www.instagram.com/karenmacleodwilkiebooks/"
-                      aria-label="Instagram"
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      <Instagram
-                        width={40}
-                        height={40}
-                        className="stroke-[#25384f]"
-                      />
-                    </a>
+                      <div className="w-full flex gap-4" aria-label="social-links">
+                        <a
+                          href="https://www.facebook.com/karenmacleodwilkiewriter"
+                          aria-label="Facebook"
+                          rel="noreferrer"
+                          target="_blank"
+                        >
+                          <Facebook width={40} height={40} className="stroke-[#25384f]" />
+                        </a>
+                        <a
+                          href="https://www.instagram.com/karenmacleodwilkiebooks/"
+                          aria-label="Instagram"
+                          rel="noreferrer"
+                          target="_blank"
+                        >
+                          <Instagram width={40} height={40} className="stroke-[#25384f]" />
+                        </a>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          )}
-        </LoadingWrapper>
+              ) : null
+            }
+          </Await>
+        </Suspense>
         <img
           src={r2Image("static_photos/footer_three.png")}
           alt="Footer illustration"
           className="w-full"
+          loading="lazy"
         />
-        <div className="flex w-full justify-center bg-[#25384F] w-[50%] p-8 md:pt-8 ">
+        <div className="flex w-full justify-center bg-[#25384F] w-[50%] p-8 md:pt-8">
           {status === "success" ? (
             <div className="text-[#25384F] text-xl font-[AthelasBook] py-8">
               Thank you!
@@ -199,9 +192,7 @@ export default function Contact({
                     <label className="caption" htmlFor="fname-field">
                       <div className="flex gap-2 font-[athelasbook] items-center font-[athelasbook]">
                         <span className="text-xl">First Name</span>
-                        <span className="text-l text-[#bec3cb]">
-                          (required)
-                        </span>
+                        <span className="text-l text-[#bec3cb]">(required)</span>
                       </div>
                     </label>
                     <input
@@ -220,12 +211,8 @@ export default function Contact({
                   <div className="field last-name flex flex-col w-full gap-2">
                     <label className="caption" htmlFor="lname-field">
                       <div className="flex gap-2 font-[athelasbook] items-center font-[athelasbook]">
-                        <span className="font-[athelasbook] text-xl">
-                          Last Name
-                        </span>
-                        <span className="text-l text-[#bec3cb]">
-                          (required)
-                        </span>
+                        <span className="font-[athelasbook] text-xl">Last Name</span>
+                        <span className="text-l text-[#bec3cb]">(required)</span>
                       </div>
                     </label>
                     <input
@@ -263,9 +250,7 @@ export default function Contact({
                 <div className="form-item field textarea required flex flex-col gap-2">
                   <label htmlFor="message-field" className="title">
                     <div>
-                      <span className="font-[athelasbook]">
-                        Message (required)
-                      </span>
+                      <span className="font-[athelasbook]">Message (required)</span>
                     </div>
                   </label>
                   <textarea
@@ -277,7 +262,6 @@ export default function Contact({
                     className="w-full px-4 py-3 border border-gray-300 rounded h-32 bg-white outline-[#E3D2CB] outline-offset-4 text-black"
                   />
                 </div>
-                
                 <div className="flex justify-center my-4">
                   <div id="turnstile-container"></div>
                 </div>

@@ -36,7 +36,7 @@ export function Navbar({ activePath }: NavbarProps) {
     <header className="bg-[#25384f] text-white py-4 z-5">
       <div className="flex flex-column align-center p-4 gap-8 items-center">
         <img
-          src={r2Image("static_photos/author_logo.png")}
+          src={"photos/author_logo.png"}
           alt="Author logo of a fairy and the name Karen MacLeod-Wilkie"
           className="w-32 h-12 sm:w-64 sm:h-24"
         />
@@ -51,6 +51,7 @@ export function Navbar({ activePath }: NavbarProps) {
                 <Link
                   key={link.to}
                   to={link.to}
+                  prefetch="intent"
                   className={`${underline} text-[#F3E3DD] text-xl font-[athelas-web] font-thin border-[#F3E3DD]`}
                 >
                   {link.label}
@@ -60,6 +61,7 @@ export function Navbar({ activePath }: NavbarProps) {
           </nav>
           <Link
             to="/shop"
+            prefetch="intent"
             className="hidden lg:flex bg-[#F3E3DD] text-[#0e2a48] px-8 py-4 rounded-full text-sm hover:underline"
           >
             Shop For Books
@@ -115,6 +117,7 @@ export function Navbar({ activePath }: NavbarProps) {
                 <Link
                   key={link.to}
                   to={link.to}
+                  prefetch="intent"
                   className={`text-[#F3E3DD] text-3xl font-[athelas-web] font-thin ${isActive ? "opacity-50" : ""} ${showMenuLinks ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
                   style={{
                     transition: `opacity 0.25s ease-out, transform 0.25s ease-out`,
@@ -128,6 +131,7 @@ export function Navbar({ activePath }: NavbarProps) {
             })}
             <Link
               to="/shop"
+              prefetch="intent"
               className="bg-[#F3E3DD] text-[#0e2a48] px-8 py-3 rounded-full text-xl mt-4"
               onClick={() => setMenuOpen(false)}
             >

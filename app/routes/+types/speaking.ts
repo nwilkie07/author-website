@@ -1,12 +1,12 @@
+import type { PageContent } from "~/types/db";
+
 export interface Route {
   MetaArgs: Record<string, unknown>;
   LoaderArgs: {
     context: {
       cloudflare: {
-        env: {
-          DB: any;
-          VALUE_FROM_CLOUDFLARE: string;
-        };
+        env: Env;
+        ctx: ExecutionContext;
       };
     };
   };
@@ -17,14 +17,7 @@ export interface Route {
   ComponentProps: {
     loaderData: {
       message: string;
-      pageContent: Array<{
-        id: number;
-        page: string;
-        title: string;
-        description: string | null;
-        created_at: string;
-        updated_at: string;
-      }>;
+      pageContent: Promise<PageContent[]>;
     };
   };
-};
+}
