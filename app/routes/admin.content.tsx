@@ -68,10 +68,6 @@ function ContentForm({
   const [title, setTitle] = useState(content?.title ?? "");
   const [description, setDescription] = useState(content?.description ?? "");
 
-  const handleSubmitDescriptor = {
-    // placeholder in case we extend in the future
-  };
-
   return (
     <form method="post" className="space-y-4" encType="multipart/form-data">
       <input type="hidden" name="intent" value={intent} />
@@ -138,13 +134,6 @@ function ContentForm({
                 "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
             }}
           />
-          <button
-            onClick={(log) => {
-              console.log(log);
-            }}
-          >
-            Log editor content
-          </button>
         </>
       </div>
       <div className="flex gap-2">

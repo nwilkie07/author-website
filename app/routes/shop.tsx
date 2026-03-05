@@ -61,7 +61,7 @@ export default function Shop({ loaderData }: Route.ComponentProps) {
                 seriesTitle: it.series_title,
                 seriesNumber: it.series_number,
                 byLine: it.by_line ?? "",
-                alt_text: it.alt_text ?? "",
+                altText: it.alt_text ?? "",
                 purchaseLinks: it.purchase_links as PurchaseLink[],
               }));
               return <BookDisplay books={bookItems} />;
@@ -86,7 +86,7 @@ export default function Shop({ loaderData }: Route.ComponentProps) {
                     seriesTitle: it.series_title,
                     seriesNumber: it.series_number,
                     byLine: it.by_line ?? "",
-                    alt_text: it.alt_text ?? "",
+                    altText: it.alt_text ?? "",
                     purchaseLinks: it.purchase_links as PurchaseLink[],
                   }));
                   return <BookDisplay books={bookItems} />;

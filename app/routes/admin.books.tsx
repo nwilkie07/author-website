@@ -1,9 +1,9 @@
 import type { Route } from "./+types/admin.books";
 import { BooksService } from "../services/books";
-import type { Book, PurchaseLink } from "../types/db";
+import type { Book, BookWithPurchaseLinks, PurchaseLink } from "../types/db";
 import { AdminNav } from "../components/AdminNav";
-import { useState, useRef, useCallback, useEffect } from "react";
-import { useFetcher } from "react-router";
+import { useState, useRef, useEffect } from "react";
+import { useFetcher, useRevalidator } from "react-router";
 import { r2Image } from "../utils/images";
 import { listFiles, deleteFile } from "../utils/r2Client";
 import DragDropUploader from "../components/DragDropUploader";
@@ -44,7 +44,6 @@ export async function action({ request, context }: Route["ActionArgs"]) {
       }
 
       const extension = file.name.split(".").pop() || "jpg";
-      const timestamp = Date.now();
       // Try to derive image name from book name if provided
       const bookNameForSlug = (formData.get("name") as string) || "";
       let key: string;
@@ -163,145 +162,6 @@ export async function action({ request, context }: Route["ActionArgs"]) {
   }
 }
 
-function ImageUpload({
-  imageUrl,
-  onImageUrlChange,
-}: {
-  imageUrl: string;
-  onImageUrlChange: (url: string) => void;
-}) {
-  const [isDragging, setIsDragging] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleUpload = async (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      alert("Please upload an image file");
-      return;
-    }
-
-    setIsUploading(true);
-
-    try {
-      const formData = new FormData();
-      formData.append("intent", "upload-image");
-      formData.append("file", file);
-
-      const response = await fetch(window.location.pathname, {
-        method: "POST",
-        body: formData,
-      });
-
-      const result = (await response.json()) as {
-        success: boolean;
-        imageUrl?: string;
-        error?: string;
-      };
-      console.log("test")
-      console.log(result)
-
-      if (result.success && result.imageUrl) {
-        onImageUrlChange(result.imageUrl);
-        setPreview(null);
-      } else {
-        alert(result);
-      }
-    } catch (error) {
-      alert("Upload Failed");
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => setPreview(ev.target?.result as string);
-      reader.readAsDataURL(file);
-      handleUpload(file);
-    }
-  }, []);
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => setPreview(ev.target?.result as string);
-      reader.readAsDataURL(file);
-      handleUpload(file);
-    }
-  };
-
-  const displayImage = preview || imageUrl;
-
-  return (
-    <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700">
-        Book Cover Image
-      </label>
-
-      <div
-        onDragOver={(e) => {
-          e.preventDefault();
-          setIsDragging(true);
-        }}
-        onDragLeave={() => setIsDragging(false)}
-        onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
-        className={`
-          relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
-          ${isDragging ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-gray-400"}
-          ${isUploading ? "opacity-50 pointer-events-none" : ""}
-        `}
-      >
-        {displayImage ? (
-          <div className="space-y-2">
-            <img
-              src={r2Image(displayImage)}
-              alt="Book cover preview"
-              className="mx-auto h-40 object-cover rounded"
-            />
-            <p className="text-sm text-gray-500">Click or drag to replace</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <div className="text-4xl">📚</div>
-            <p className="text-sm text-gray-600">
-              {isUploading
-                ? "Uploading..."
-                : "Drag and drop an image here, or click to select"}
-            </p>
-            <p className="text-xs text-gray-400">PNG, JPG, WebP up to 10MB</p>
-          </div>
-        )}
-      </div>
-
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleFileSelect}
-        className="hidden"
-      />
-
-      <div className="flex items-center gap-2">
-        <input
-          type="text"
-          value={imageUrl}
-          onChange={(e) => onImageUrlChange(e.target.value)}
-          placeholder="Or enter image URL manually"
-          className="flex-1 border rounded px-3 py-2 text-sm text-black"
-        />
-      </div>
-    </div>
-  );
-}
-
 function BookForm({ book, onCancel }: { book?: Book; onCancel?: () => void }) {
   const intent = book ? "update-book" : "create-book";
   const [imageUrl, setImageUrl] = useState(book?.image_url || "");
@@ -316,6 +176,7 @@ function BookForm({ book, onCancel }: { book?: Book; onCancel?: () => void }) {
   const uploadFetcher = useFetcher();
   const bookFetcher = useFetcher();
   const pendingBookData = useRef<FormData | null>(null);
+  const { revalidate } = useRevalidator();
 
   const isUploading = uploadFetcher.state !== "idle" || bookFetcher.state !== "idle";
 
@@ -333,12 +194,13 @@ function BookForm({ book, onCancel }: { book?: Book; onCancel?: () => void }) {
     }
   }, [uploadFetcher.data]);
 
-  // When book save completes
+  // When book save completes, revalidate the loader and close the form
   useEffect(() => {
     if (bookFetcher.data) {
       const result = bookFetcher.data as { success: boolean; error?: string };
       if (result.success) {
-        window.location.reload();
+        revalidate();
+        onCancel?.();
       } else {
         alert(result.error || "Failed to save book");
       }
@@ -530,15 +392,17 @@ function PurchaseLinkForm({
   const [iconUrl, setIconUrl] = useState<string>(link?.icon_url ?? "");
   const [storeName, setStoreName] = useState<string>(link?.store_name || "");
   const fetcher = useFetcher();
+  const { revalidate } = useRevalidator();
   const isSubmitting = fetcher.state !== "idle";
 
   useEffect(() => {
     if (fetcher.data) {
       const result = fetcher.data as { success: boolean; error?: string };
       if (result.success) {
-        window.location.reload();
+        revalidate();
+        onCancel?.();
       } else {
-        alert(result.error || "Upload failed");
+        alert(result.error || "Failed to save purchase link");
       }
     }
   }, [fetcher.data]);
@@ -549,6 +413,7 @@ function PurchaseLinkForm({
     const formData = new FormData(form);
     fetcher.submit(formData, { method: "POST", encType: "multipart/form-data" });
   };
+
   return (
     <form
       method="post"
@@ -593,7 +458,7 @@ function PurchaseLinkForm({
       </select>
       <button
         type="submit"
-        className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 text-black"
+        className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
       >
         {link ? "Update" : "Add"}
         {isSubmitting && (
@@ -614,31 +479,14 @@ function PurchaseLinkForm({
 }
 
 export default function AdminBooks({ loaderData }: Route["ComponentProps"]) {
-  const { books: initialBooks, icons } = (loaderData as any) || {
-    books: [],
-    icons: [],
-  };
-  const [books, setBooks] = useState<any[]>(initialBooks);
+  const { books, icons } = (loaderData as unknown as {
+    books: BookWithPurchaseLinks[];
+    icons: { key: string; name: string }[];
+  });
   const [editingBookId, setEditingBookId] = useState<number | null>(null);
   const [editingLinkId, setEditingLinkId] = useState<number | null>(null);
 
-  // Refresh books data from API
-  const refreshBooks = async () => {
-    try {
-      const resp = await fetch("/api/books");
-      if (!resp.ok) return;
-      const data = (await resp.json()) as any;
-      setBooks(data?.books ?? []);
-    } catch {
-      // ignore
-    }
-  };
-
-  const filteredIcons = icons.filter((icon: { key: string; name: string }) => {
-    if (icon.key !== "icons/") {
-      return icon;
-    }
-  });
+  const filteredIcons = icons.filter((icon) => icon.key !== "icons/");
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
@@ -653,7 +501,7 @@ export default function AdminBooks({ loaderData }: Route["ComponentProps"]) {
           </section>
           <section className="bg-white rounded-lg shadow p-6 lg:col-span-2">
             <h2 className="text-xl font-semibold mb-4">Books</h2>
-            {books.map((book: any) => (
+            {books.map((book) => (
               <div
                 key={book.id}
                 className="flex gap-4 mb-6 items-start border-b border-gray-200 pb-4"
@@ -667,11 +515,11 @@ export default function AdminBooks({ loaderData }: Route["ComponentProps"]) {
                   </div>
                 ) : (
                   <>
-            <img
-              src={r2Image(book.image_url)}
-              alt={`Cover image for ${book.name}`}
-              className="w-28 h-40 object-cover rounded shadow"
-            />
+                    <img
+                      src={r2Image(book.image_url)}
+                      alt={`Cover image for ${book.name}`}
+                      className="w-28 h-40 object-cover rounded shadow"
+                    />
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <h3 className="text-lg font-semibold text-black">
@@ -727,7 +575,7 @@ export default function AdminBooks({ loaderData }: Route["ComponentProps"]) {
                           Purchase Links
                         </h4>
                         <div className="flex flex-wrap gap-2 items-center">
-                          {book.purchase_links.map((link: any) =>
+                          {book.purchase_links.map((link) =>
                             editingLinkId === link.id ? (
                               <PurchaseLinkForm
                                 key={link.id}
@@ -747,7 +595,7 @@ export default function AdminBooks({ loaderData }: Route["ComponentProps"]) {
                                   rel="noopener noreferrer"
                                   className="inline-flex items-center gap-1 text-black"
                                 >
-                  {link.icon_url && (
+                                  {link.icon_url && (
                                     <img
                                       src={r2Image(link.icon_url)}
                                       alt={`Icon for ${link.store_name}`}
@@ -763,7 +611,14 @@ export default function AdminBooks({ loaderData }: Route["ComponentProps"]) {
                                 >
                                   Edit
                                 </button>
-                                <form method="post" className="inline ml-1" onSubmit={(e) => { if (!confirm("Delete this purchase link?")) e.preventDefault(); }}>
+                                <form
+                                  method="post"
+                                  className="inline ml-1"
+                                  onSubmit={(e) => {
+                                    if (!confirm("Delete this purchase link?"))
+                                      e.preventDefault();
+                                  }}
+                                >
                                   <input type="hidden" name="intent" value="delete-purchase-link" />
                                   <input type="hidden" name="id" value={link.id} />
                                   <button type="submit" className="text-red-600 hover:text-red-800">

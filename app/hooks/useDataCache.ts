@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import type { PageContent } from "~/types/db";
 
 // Simple localStorage-backed cache for data loaded via route loaders.
 // The hook returns a Promise<T> that resolves with cached data if available,
@@ -65,4 +66,22 @@ export function useDataCache<T>(cacheKey: string, serverData: T | Promise<T>): P
     return freshPromise;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cacheKey, serverData]);
+}
+
+// Namespace prefix used for page-content cache keys so they don't collide with
+// other useDataCache entries and remain stable across refactors.
+const PAGE_CONTENT_CACHE_PREFIX = "pageContent_v1_";
+
+/**
+ * Convenience wrapper around useDataCache for PageContent arrays.
+ *
+ * Accepts a plain page name (e.g. "home") and automatically namespaces the
+ * localStorage key as `pageContent_v1_<page>`, keeping it consistent with
+ * the keys written by the previous standalone usePageContentCache hook.
+ */
+export function usePageContentCache(
+  page: string,
+  serverData: PageContent[] | Promise<PageContent[]>
+): Promise<PageContent[]> {
+  return useDataCache<PageContent[]>(`${PAGE_CONTENT_CACHE_PREFIX}${page}`, serverData);
 }

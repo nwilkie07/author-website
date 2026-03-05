@@ -1,11 +1,12 @@
 import type { Route } from "./+types/admin.icons";
 import { AdminNav } from "../components/AdminNav";
 import { useState, useEffect } from "react";
-import { useFetcher } from "react-router";
+import { useFetcher, useRevalidator } from "react-router";
 import { IconsService } from "../services/icons";
 import { listFiles, deleteFile } from "../utils/r2Client";
 import DragDropUploader from "../components/DragDropUploader";
 import { r2Image } from "../utils/images";
+import type { Icon } from "../types/db";
 
 export async function loader({ context }: Route.LoaderArgs) {
   const db = context.cloudflare.env.DB;
@@ -31,10 +32,10 @@ export async function action({ request, context }: Route.ActionArgs) {
       if (!name) {
         return { success: false, error: "Icon name is required" };
       }
-      
+
       // Determine format from file type
       const format = file.type.split("/").pop() || "png";
-      
+
       // Upload to R2
       const extName = file.name.split(".").pop() || format;
       let iconName = name;
@@ -42,14 +43,14 @@ export async function action({ request, context }: Route.ActionArgs) {
         iconName = `${iconName}.${extName}`;
       }
       const key = `icons/${iconName}`;
-      
+
       try {
         const arrayBuffer = await file.arrayBuffer();
         await bucket.put(key, arrayBuffer, {
           httpMetadata: { contentType: file.type },
         });
         const imageUrl = key;
-        
+
         // Store in database
         await iconsService.createIcon(name, imageUrl, format);
         return { success: true };
@@ -62,28 +63,28 @@ export async function action({ request, context }: Route.ActionArgs) {
       const id = parseInt(formData.get("id") as string);
       const name = formData.get("name") as string;
       const file = formData.get("file") as File | null;
-      
+
       if (!name) {
         return { success: false, error: "Icon name is required" };
       }
-      
+
       const existingIcon = await iconsService.getIconById(id);
       if (!existingIcon) {
         return { success: false, error: "Icon not found" };
       }
-      
+
       let imageUrl = existingIcon.image_url;
       let format = existingIcon.format;
-      
+
       // If a new file was uploaded, replace the image
       if (file) {
         // Delete old file from R2
         try {
           await deleteFile(bucket, existingIcon.image_url);
-        } catch (e) {
+        } catch {
           // Ignore deletion errors
         }
-        
+
         // Upload new file
         format = file.type.split("/").pop() || "png";
         const extName = file.name.split(".").pop() || format;
@@ -92,7 +93,7 @@ export async function action({ request, context }: Route.ActionArgs) {
           iconName = `${iconName}.${extName}`;
         }
         const key = `icons/${iconName}`;
-        
+
         try {
           const arrayBuffer = await file.arrayBuffer();
           await bucket.put(key, arrayBuffer, {
@@ -103,7 +104,7 @@ export async function action({ request, context }: Route.ActionArgs) {
           return { success: false, error: err?.message ?? "Upload failed" };
         }
       }
-      
+
       await iconsService.updateIcon(id, name, imageUrl, format);
       return { success: true };
     }
@@ -113,14 +114,14 @@ export async function action({ request, context }: Route.ActionArgs) {
       if (!icon) {
         return { success: false, error: "Icon not found" };
       }
-      
+
       // Delete from R2
       try {
         await deleteFile(bucket, icon.image_url);
-      } catch (e) {
+      } catch {
         // Ignore deletion errors
       }
-      
+
       // Delete from database
       await iconsService.deleteIcon(id);
       return { success: true };
@@ -134,20 +135,22 @@ function IconForm({
   icon,
   onCancel,
 }: {
-  icon?: { id: number; name: string; image_url: string; format: string };
+  icon?: Icon;
   onCancel?: () => void;
 }) {
   const [name, setName] = useState(icon?.name || "");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const fetcher = useFetcher();
+  const { revalidate } = useRevalidator();
   const isSubmitting = fetcher.state !== "idle";
 
   useEffect(() => {
     if (fetcher.data) {
       const result = fetcher.data as { success: boolean; error?: string };
       if (result.success) {
-        window.location.reload();
+        revalidate();
+        onCancel?.();
       } else {
         alert(result.error || "Failed to save icon");
       }
@@ -189,7 +192,7 @@ function IconForm({
           required
         />
       </div>
-      
+
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Icon Image {icon && "(leave empty to keep existing)"}
@@ -210,7 +213,7 @@ function IconForm({
           <img src={r2Image(icon.image_url)} alt={icon.name} className="mt-2 w-16 h-16 object-contain" />
         ) : null}
       </div>
-      
+
       <div className="flex gap-2">
         <button
           type="submit"
@@ -233,10 +236,11 @@ function IconForm({
   );
 }
 
-export default function AdminIcons({ loaderData }: any) {
-  const { icons } = loaderData;
+export default function AdminIcons({ loaderData }: Route.ComponentProps) {
+  const { icons } = loaderData as unknown as { icons: Icon[] };
   const [editingIconId, setEditingIconId] = useState<number | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const { revalidate } = useRevalidator();
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
@@ -246,7 +250,7 @@ export default function AdminIcons({ loaderData }: any) {
           <h1 className="text-3xl font-bold text-black">Icon Library</h1>
           <button
             type="button"
-            onClick={() => window.location.reload()}
+            onClick={revalidate}
             className="bg-yellow-500 text-black px-4 py-2 rounded-lg hover:bg-yellow-600"
           >
             Refresh
@@ -254,7 +258,7 @@ export default function AdminIcons({ loaderData }: any) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-          {icons?.map((ico: any) => (
+          {icons?.map((ico) => (
             <div key={ico.id} className="bg-white rounded-lg shadow p-4 flex flex-col items-center gap-2">
               {editingIconId === ico.id ? (
                 <div className="w-full">
@@ -265,19 +269,19 @@ export default function AdminIcons({ loaderData }: any) {
                 </div>
               ) : (
                 <>
-                  <img 
-                    src={r2Image(ico.image_url)} 
-                    alt={ico.name || 'Icon'} 
-                    className="w-24 h-24 object-contain" 
+                  <img
+                    src={r2Image(ico.image_url)}
+                    alt={ico.name || "Icon"}
+                    className="w-24 h-24 object-contain"
                   />
                   <div className="text-sm text-gray-700 font-medium">{ico.name}</div>
                   <div className="text-xs text-gray-400">Format: .{ico.format}</div>
                   <div className="text-xs text-gray-400 truncate max-w-full">URL: {ico.image_url}</div>
                   <div className="text-xs text-gray-400">
-                    Created: {ico.created_at ? new Date(ico.created_at).toLocaleDateString() : 'N/A'}
+                    Created: {ico.created_at ? new Date(ico.created_at).toLocaleDateString() : "N/A"}
                   </div>
                   <div className="text-xs text-gray-400">
-                    Updated: {ico.updated_at ? new Date(ico.updated_at).toLocaleDateString() : 'N/A'}
+                    Updated: {ico.updated_at ? new Date(ico.updated_at).toLocaleDateString() : "N/A"}
                   </div>
                   <div className="flex gap-2 w-full">
                     <button
@@ -286,10 +290,18 @@ export default function AdminIcons({ loaderData }: any) {
                     >
                       Edit
                     </button>
-                    <form method="post" className="flex-1" onSubmit={(e)=>{ if(!confirm("Delete this icon?")) e.preventDefault(); }}>
+                    <form
+                      method="post"
+                      className="flex-1"
+                      onSubmit={(e) => {
+                        if (!confirm("Delete this icon?")) e.preventDefault();
+                      }}
+                    >
                       <input type="hidden" name="intent" value="delete-icon" />
                       <input type="hidden" name="id" value={ico.id} />
-                      <button type="submit" className="w-full bg-red-600 text-white py-1 rounded hover:bg-red-700">Delete</button>
+                      <button type="submit" className="w-full bg-red-600 text-white py-1 rounded hover:bg-red-700">
+                        Delete
+                      </button>
                     </form>
                   </div>
                 </>

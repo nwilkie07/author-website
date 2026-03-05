@@ -6,8 +6,6 @@ import { join } from 'path'
 async function main() {
   const sqlPath = join(__dirname, 'add-series-columns.sql')
   const sql = readFileSync(sqlPath, 'utf8')
-  console.log('Migration SQL to run on Cloudflare D1 (books table):')
-  console.log(sql)
 }
 
 main().catch((e) => {

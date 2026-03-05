@@ -7,7 +7,7 @@ import LoadingWrapper from "~/components/LoadingWrapper";
 import { sanitizeHTML } from "../utils/sanitizeHTML";
 import { Facebook, Instagram } from "lucide-react";
 import { r2Image } from "~/utils/images";
-import { usePageContentCache } from "~/hooks/usePageContentCache";
+import { readFromCacheSync, usePageContentCache } from "~/hooks/useDataCache";
 
 declare global {
   interface Window {
@@ -31,6 +31,8 @@ export default function Contact({
   pageContent: PageContent[] | Promise<PageContent[]>;
 }) {
   const cachedPageContent = usePageContentCache("contact", pageContent);
+  const cachedPageContentSync = readFromCacheSync<PageContent[]>("pageContent_v1_contact");
+  
   const [fname, setFname] = useState("");
   const [lname, setLname] = useState("");
   const [email, setEmail] = useState("");
@@ -121,53 +123,97 @@ export default function Contact({
     <>
       <Navbar activePath="/contact" authorName="Karen MacLeod-Wilkie" />
       <section className="bg-[#f4e6df] pt-12">
-        <Suspense
-          fallback={
-            <LoadingWrapper variant="grid" skeletonCount={2} className="grid-cols-2 m-6" />
-          }
-        >
-          <Await resolve={cachedPageContent}>
-            {(resolvedContent) =>
-              resolvedContent && resolvedContent.length > 0 ? (
-                <div className="container mx-auto px-6 flex flex-col w-full justify-center gap-8 items-center">
-                  <div className="space-y-4 self-start">
-                    <div className="text-2xl md:text-4xl text-[#25384F] font-[IvyModeBold] mb-6 text-left">
-                      {resolvedContent[0].title}
-                    </div>
+        {cachedPageContentSync ? (
+          (() => {
+            const resolvedContent = cachedPageContentSync;
+            if (!resolvedContent || resolvedContent.length === 0) return null;
+            return (
+              <div className="container mx-auto px-6 flex flex-col w-full justify-center gap-8 items-center">
+                <div className="space-y-4 self-start">
+                  <div className="text-2xl md:text-4xl text-[#25384F] font-[IvyModeBold] mb-6 text-left">
+                    {resolvedContent[0].title}
                   </div>
-                  <div className="flex items-center justify-center">
-                    <div className="flex flex-col w-full gap-4">
-                      <div
-                        className="flex text-[#25384F] text-base md:text-xl leading-relaxed gap-16 font-[AthelasBook] mb-4"
-                        dangerouslySetInnerHTML={{
-                          __html: sanitizeHTML(resolvedContent[0].description ?? ""),
-                        }}
-                      />
-                      <div className="w-full flex gap-4" aria-label="social-links">
-                        <a
-                          href="https://www.facebook.com/karenmacleodwilkiewriter"
-                          aria-label="Facebook"
-                          rel="noreferrer"
-                          target="_blank"
-                        >
-                          <Facebook width={40} height={40} className="stroke-[#25384f]" />
-                        </a>
-                        <a
-                          href="https://www.instagram.com/karenmacleodwilkiebooks/"
-                          aria-label="Instagram"
-                          rel="noreferrer"
-                          target="_blank"
-                        >
-                          <Instagram width={40} height={40} className="stroke-[#25384f]" />
-                        </a>
-                      </div>
+                </div>
+                <div className="flex items-center justify-center">
+                  <div className="flex flex-col w-full gap-4">
+                    <div
+                      className="flex text-[#25384F] text-base md:text-xl leading-relaxed gap-16 font-[AthelasBook] mb-4"
+                      dangerouslySetInnerHTML={{
+                        __html: sanitizeHTML(resolvedContent[0].description ?? ""),
+                      }}
+                    />
+                    <div className="w-full flex gap-4" aria-label="social-links">
+                      <a
+                        href="https://www.facebook.com/karenmacleodwilkiewriter"
+                        aria-label="Facebook"
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        <Facebook width={40} height={40} className="stroke-[#25384f]" />
+                      </a>
+                      <a
+                        href="https://www.instagram.com/karenmacleodwilkiebooks/"
+                        aria-label="Instagram"
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        <Instagram width={40} height={40} className="stroke-[#25384f]" />
+                      </a>
                     </div>
                   </div>
                 </div>
-              ) : null
+              </div>
+            );
+          })()
+        ) : (
+          <Suspense
+            fallback={
+              <LoadingWrapper variant="grid" skeletonCount={2} className="grid-cols-2 m-6" />
             }
-          </Await>
-        </Suspense>
+          >
+            <Await resolve={cachedPageContent}>
+              {(resolvedContent) =>
+                resolvedContent && resolvedContent.length > 0 ? (
+                  <div className="container mx-auto px-6 flex flex-col w-full justify-center gap-8 items-center">
+                    <div className="space-y-4 self-start">
+                      <div className="text-2xl md:text-4xl text-[#25384F] font-[IvyModeBold] mb-6 text-left">
+                        {resolvedContent[0].title}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-center">
+                      <div className="flex flex-col w-full gap-4">
+                        <div
+                          className="flex text-[#25384F] text-base md:text-xl leading-relaxed gap-16 font-[AthelasBook] mb-4"
+                          dangerouslySetInnerHTML={{
+                            __html: sanitizeHTML(resolvedContent[0].description ?? ""),
+                          }}
+                        />
+                        <div className="w-full flex gap-4" aria-label="social-links">
+                          <a
+                            href="https://www.facebook.com/karenmacleodwilkiewriter"
+                            aria-label="Facebook"
+                            rel="noreferrer"
+                            target="_blank"
+                          >
+                            <Facebook width={40} height={40} className="stroke-[#25384f]" />
+                          </a>
+                          <a
+                            href="https://www.instagram.com/karenmacleodwilkiebooks/"
+                            aria-label="Instagram"
+                            rel="noreferrer"
+                            target="_blank"
+                          >
+                            <Instagram width={40} height={40} className="stroke-[#25384f]" />
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null
+              }
+            </Await>
+          </Suspense>
+        )}
         <img
           src={"photos/footer_three.png"}
           alt="Footer illustration"

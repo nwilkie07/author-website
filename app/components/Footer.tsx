@@ -169,7 +169,7 @@ export function Footer({
                 <Link to="/about" prefetch="intent" className="flex gap-8 stroke-white">
                   <CircleUserRound />
                 </Link>
-                <Link to="/email" prefetch="intent">
+                <Link to="/emails" prefetch="intent">
                   <Newspaper />
                 </Link>
                 <Link to="/speaking" prefetch="intent">

@@ -10,8 +10,7 @@ import { TestimonialCarousel } from "../components/TestimonialCarousel";
 import type { BookItem } from "~/types/books";
 import LoadingWrapper from "~/components/LoadingWrapper";
 import { useScreenSize } from "~/hooks/useScreenSize";
-import { useDataCache } from "~/hooks/useDataCache";
-import { usePageContentCache } from "~/hooks/usePageContentCache";
+import { useDataCache, usePageContentCache } from "~/hooks/useDataCache";
 
 export function Welcome({
   message,
@@ -83,7 +82,7 @@ export function Welcome({
                   seriesTitle: it.series_title,
                   seriesNumber: it.series_number,
                   byLine: it.by_line ?? "",
-                  alt_text: it.alt_text ?? "",
+                  altText: it.alt_text ?? "",
                   purchaseLinks: it.purchase_links as any[],
                 }));
                 return <BookDisplay books={bookItems} />;

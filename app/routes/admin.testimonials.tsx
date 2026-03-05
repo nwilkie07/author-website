@@ -1,6 +1,7 @@
+import React, { useState, useEffect } from "react";
+import { useFetcher, useRevalidator } from "react-router";
 import { TestimonialsService } from "../services/testimonials";
 import { AdminNav } from "~/components/AdminNav";
-import { useState } from "react";
 import type { Testimonial } from "../types/db";
 
 // Loader: fetch all testimonials
@@ -49,9 +50,32 @@ function TestimonialForm({ testimonial, onCancel }: { testimonial?: Testimonial;
   const [name, setName] = useState(testimonial?.name ?? "");
   const [description, setDescription] = useState(testimonial?.description ?? "");
   const [store, setStore] = useState(testimonial?.store ?? "");
+  const fetcher = useFetcher();
+  const { revalidate } = useRevalidator();
+  const isSubmitting = fetcher.state !== "idle";
+
+  // When the action resolves, revalidate the loader and close the form
+  useEffect(() => {
+    if (fetcher.data) {
+      const result = fetcher.data as { success: boolean; error?: string };
+      if (result.success) {
+        revalidate();
+        onCancel?.();
+      } else {
+        alert(result.error || "Failed to save testimonial");
+      }
+    }
+  }, [fetcher.data]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const form = e.currentTarget as HTMLFormElement;
+    const formData = new FormData(form);
+    fetcher.submit(formData, { method: "POST" });
+  };
 
   return (
-    <form method="post" className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <input type="hidden" name="intent" value={intent} />
       {testimonial && <input type="hidden" name="id" value={testimonial.id} />}
       <div className="text-black">
@@ -89,8 +113,12 @@ function TestimonialForm({ testimonial, onCancel }: { testimonial?: Testimonial;
         />
       </div>
       <div className="flex gap-2">
-        <button type="submit" className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-          {testimonial ? "Update Testimonial" : "Add Testimonial"}
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+        >
+          {isSubmitting ? "Saving..." : testimonial ? "Update Testimonial" : "Add Testimonial"}
         </button>
         {onCancel && (
           <button type="button" onClick={onCancel} className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">
@@ -101,8 +129,6 @@ function TestimonialForm({ testimonial, onCancel }: { testimonial?: Testimonial;
     </form>
   );
 }
-
-import React from "react"; // ensure React is in scope for JSX in some environments
 
 export default function AdminTestimonials({ loaderData }: any) {
   const { testimonials } = loaderData;
@@ -133,7 +159,7 @@ export default function AdminTestimonials({ loaderData }: any) {
                         <h3 className="text-lg font-semibold">{t.name}</h3>
                         <div className="flex gap-2">
                           <button className="text-blue-600 hover:text-blue-800 text-sm" onClick={() => setEditingId(t.id)}>Edit</button>
-                          <form method="post" className="inline" onSubmit={(e)=>{ if(!confirm("Delete this testimonial?")) e.preventDefault(); }}>
+                          <form method="post" className="inline" onSubmit={(e) => { if (!confirm("Delete this testimonial?")) e.preventDefault(); }}>
                             <input type="hidden" name="intent" value="delete-testimonial" />
                             <input type="hidden" name="id" value={t.id} />
                             <button type="submit" className="text-red-600 hover:text-red-800 text-sm">Delete</button>

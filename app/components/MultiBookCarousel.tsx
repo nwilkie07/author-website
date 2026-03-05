@@ -39,7 +39,7 @@ export const MultiBookCarousel: React.FC<Props> = ({
           >
             <img
               src={it.imageUrl}
-              alt={it.alt_text ?? it.name}
+              alt={it.altText ?? it.name}
               className="h-[300px] lg:h-[500px] object-contain"
               style={{
                 width: imageWidth,
