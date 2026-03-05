@@ -5,7 +5,7 @@ import { AdminNav } from "../components/AdminNav";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useFetcher } from "react-router";
 import { r2Image } from "../utils/images";
-import { listFiles } from "../utils/r2Client";
+import { listFiles, deleteFile } from "../utils/r2Client";
 import DragDropUploader from "../components/DragDropUploader";
 
 export async function loader({ context }: Route["LoaderArgs"]) {
@@ -64,8 +64,7 @@ export async function action({ request, context }: Route["ActionArgs"]) {
         await bucket.put(key, arrayBuffer, {
           httpMetadata: { contentType: file.type },
         });
-        const imageUrl = r2Image(key);
-        return { success: true, imageUrl, key };
+        return { success: true, imageUrl: key, key };
       } catch (err: any) {
         console.error("Upload image failed:", err?.message ?? err);
         return { success: false, error: err?.message ?? "Upload failed" };
@@ -117,6 +116,14 @@ export async function action({ request, context }: Route["ActionArgs"]) {
     }
     case "delete-book": {
       const id = parseInt(formData.get("id") as string);
+      const book = await booksService.getBookById(id);
+      if (book?.image_url) {
+        try {
+          await deleteFile(bucket, book.image_url);
+        } catch {
+          // Ignore R2 deletion errors
+        }
+      }
       await booksService.deleteBook(id);
       return { success: true };
     }

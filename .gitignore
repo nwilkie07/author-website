@@ -11,6 +11,10 @@ build/
 .react-router/
 .vercel/
 .solid/
+.claude/
+.vscode/
+.superset/
+.wrangler/
 
 # Cloudflare
 .wrangler/
