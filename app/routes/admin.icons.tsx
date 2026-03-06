@@ -26,6 +26,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     case "create-icon": {
       const file = formData.get("file") as File;
       const name = formData.get("name") as string;
+      const mediaType = (formData.get("mediaType") as string) || "";
       if (!file) {
         return { success: false, error: "No file provided" };
       }
@@ -33,11 +34,8 @@ export async function action({ request, context }: Route.ActionArgs) {
         return { success: false, error: "Icon name is required" };
       }
 
-      // Determine format from file type
-      const format = file.type.split("/").pop() || "png";
-
       // Upload to R2
-      const extName = file.name.split(".").pop() || format;
+      const extName = file.name.split(".").pop() || "png";
       let iconName = name;
       if (!iconName.includes(".")) {
         iconName = `${iconName}.${extName}`;
@@ -52,7 +50,7 @@ export async function action({ request, context }: Route.ActionArgs) {
         const imageUrl = key;
 
         // Store in database
-        await iconsService.createIcon(name, imageUrl, format);
+        await iconsService.createIcon(name, imageUrl, mediaType);
         return { success: true };
       } catch (err: any) {
         console.error("Upload icon failed:", err?.message ?? err);
@@ -62,6 +60,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     case "update-icon": {
       const id = parseInt(formData.get("id") as string);
       const name = formData.get("name") as string;
+      const mediaType = (formData.get("mediaType") as string) || "";
       const file = formData.get("file") as File | null;
 
       if (!name) {
@@ -74,10 +73,10 @@ export async function action({ request, context }: Route.ActionArgs) {
       }
 
       let imageUrl = existingIcon.image_url;
-      let format = existingIcon.format;
+      let media_type = existingIcon.media_type;
 
       // If a new file was uploaded, replace the image
-      if (file) {
+      if (file && file.size > 0) {
         // Delete old file from R2
         try {
           await deleteFile(bucket, existingIcon.image_url);
@@ -86,8 +85,7 @@ export async function action({ request, context }: Route.ActionArgs) {
         }
 
         // Upload new file
-        format = file.type.split("/").pop() || "png";
-        const extName = file.name.split(".").pop() || format;
+        const extName = file.name.split(".").pop();
         let iconName = name;
         if (!iconName.includes(".")) {
           iconName = `${iconName}.${extName}`;
@@ -105,7 +103,7 @@ export async function action({ request, context }: Route.ActionArgs) {
         }
       }
 
-      await iconsService.updateIcon(id, name, imageUrl, format);
+      await iconsService.updateIcon(id, name, imageUrl, mediaType);
       return { success: true };
     }
     case "delete-icon": {
@@ -131,6 +129,13 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 }
 
+const MEDIA_TYPE_OPTIONS = [
+  { value: "", label: "— Select media type —" },
+  { value: "e-book", label: "E-book" },
+  { value: "audiobook", label: "Audiobook" },
+  { value: "paperback", label: "Paperback" },
+];
+
 function IconForm({
   icon,
   onCancel,
@@ -139,6 +144,7 @@ function IconForm({
   onCancel?: () => void;
 }) {
   const [name, setName] = useState(icon?.name || "");
+  const [mediaType, setMediaType] = useState(icon?.media_type || "");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const fetcher = useFetcher();
@@ -170,12 +176,15 @@ function IconForm({
       formData.append("id", icon.id.toString());
     }
     formData.append("name", name);
+    formData.append("mediaType", mediaType);
     if (selectedFile) {
       formData.append("file", selectedFile);
     }
 
     fetcher.submit(formData, { method: "POST", encType: "multipart/form-data" });
   };
+
+  console.log("Media type", mediaType)
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -191,6 +200,23 @@ function IconForm({
           placeholder="e.g. amazon, barnes-noble"
           required
         />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Media Type
+        </label>
+        <select
+          value={mediaType}
+          onChange={(e) => setMediaType(e.target.value)}
+          className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 text-black bg-white"
+        >
+          {MEDIA_TYPE_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div>
@@ -275,7 +301,7 @@ export default function AdminIcons({ loaderData }: Route.ComponentProps) {
                     className="w-24 h-24 object-contain"
                   />
                   <div className="text-sm text-gray-700 font-medium">{ico.name}</div>
-                  <div className="text-xs text-gray-400">Format: .{ico.format}</div>
+                  <div className="text-xs text-gray-400">{"Media Type: " + ico.media_type}</div>
                   <div className="text-xs text-gray-400 truncate max-w-full">URL: {ico.image_url}</div>
                   <div className="text-xs text-gray-400">
                     Created: {ico.created_at ? new Date(ico.created_at).toLocaleDateString() : "N/A"}

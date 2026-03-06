@@ -1,12 +1,13 @@
 import type { Route } from "./+types/admin.books";
 import { BooksService } from "../services/books";
-import type { Book, BookWithPurchaseLinks, PurchaseLink } from "../types/db";
+import type { Book, BookWithPurchaseLinks, Icon, PurchaseLink } from "../types/db";
 import { AdminNav } from "../components/AdminNav";
 import { useState, useRef, useEffect } from "react";
 import { useFetcher, useRevalidator } from "react-router";
 import { r2Image } from "../utils/images";
 import { listFiles, deleteFile } from "../utils/r2Client";
 import DragDropUploader from "../components/DragDropUploader";
+import { IconsService } from "~/services/icons";
 
 export async function loader({ context }: Route["LoaderArgs"]) {
   const db = context.cloudflare.env.DB;
@@ -14,18 +15,8 @@ export async function loader({ context }: Route["LoaderArgs"]) {
   const books = await booksService.getAllBooksWithPurchaseLinks();
   // Fetch icon filenames from the Cloudflare R2 bucket (icons/ folder)
   // We only need the display names, but keep the full key as the value
-  const bucket = context.cloudflare.env.IMAGES_BUCKET;
-  let icons: { key: string; name: string }[] = [];
-  try {
-    const files = await listFiles(bucket, "icons/");
-    icons = files.map((f) => {
-      const segments = f.key.split("/");
-      const name = segments.length > 1 ? segments[segments.length - 1] : f.key;
-      return { key: f.key, name };
-    });
-  } catch {
-    icons = [];
-  }
+  const iconService = new IconsService(db)
+  const icons = await iconService.getAllIcons();
   return { books, icons };
 }
 
@@ -130,12 +121,14 @@ export async function action({ request, context }: Route["ActionArgs"]) {
       const bookId = parseInt(formData.get("bookId") as string);
       const storeName = formData.get("storeName") as string;
       const url = formData.get("url") as string;
-      const iconUrl = formData.get("iconUrl") as string | null;
-      const link = await booksService.createPurchaseLink(
+      const iconUrl = formData.get("iconUrl") as string;
+      const media_type = formData.get("mediaType") as string;
+      const link = await (booksService.createPurchaseLink as any)(
         bookId,
         storeName,
         url,
-        iconUrl || undefined,
+        iconUrl,
+        media_type
       );
       return { success: true, link };
     }
@@ -143,12 +136,14 @@ export async function action({ request, context }: Route["ActionArgs"]) {
       const id = parseInt(formData.get("id") as string);
       const storeName = formData.get("storeName") as string;
       const url = formData.get("url") as string;
-      const iconUrl = formData.get("iconUrl") as string | null;
-      const link = await booksService.updatePurchaseLink(
+      const iconUrl = formData.get("iconUrl") as string;
+      const media_type = formData.get("mediaType") as string;
+      const link = await (booksService.updatePurchaseLink as any)(
         id,
         storeName,
         url,
-        iconUrl || undefined,
+        iconUrl,
+        media_type
       );
       return { success: true, link };
     }
@@ -385,11 +380,14 @@ function PurchaseLinkForm({
 }: {
   bookId: number;
   link?: PurchaseLink;
-  icons?: { key: string; name: string }[];
+  icons?: Icon[];
   onCancel?: () => void;
 }) {
+  // Ref to the form element to support client-side reset after submit
+  const formRef = useRef<HTMLFormElement | null>(null);
   const intent = link ? "update-purchase-link" : "create-purchase-link";
   const [iconUrl, setIconUrl] = useState<string>(link?.icon_url ?? "");
+  const [mediaType, setMediaType] = useState<string>(link?.media_type ?? "")
   const [storeName, setStoreName] = useState<string>(link?.store_name || "");
   const fetcher = useFetcher();
   const { revalidate } = useRevalidator();
@@ -401,6 +399,13 @@ function PurchaseLinkForm({
       if (result.success) {
         revalidate();
         onCancel?.();
+        // Clear form fields on successful submit. This works well with
+        // the non-controlled URL input, which is reset via the DOM form
+        // reset and the internal state via React state setters.
+        formRef.current?.reset();
+        setIconUrl("");
+        setMediaType("");
+        setStoreName("");
       } else {
         alert(result.error || "Failed to save purchase link");
       }
@@ -419,19 +424,13 @@ function PurchaseLinkForm({
       method="post"
       className="flex flex-wrap gap-2 items-center"
       onSubmit={handleSubmit}
+      ref={formRef}
     >
       <input type="hidden" name="intent" value={intent} />
-      {link && <input type="hidden" name="id" value={link.id} />}
+      {link && <input type="hidden" name="id" value={link.id} />} 
       <input type="hidden" name="bookId" value={bookId} />
-      <input
-        type="text"
-        name="storeName"
-        placeholder="Store name"
-        required
-        value={storeName}
-        onChange={(e) => setStoreName(e.currentTarget.value)}
-        className="border rounded px-3 py-1 text-sm text-black"
-      />
+      <input type="hidden" name="iconUrl" value={iconUrl} />
+      <input type="hidden" name="mediaType" value={mediaType} /> 
       <input
         type="text"
         name="url"
@@ -442,17 +441,23 @@ function PurchaseLinkForm({
       />
       {/* Icon dropdown sourced from Cloudflare R2 icons/ folder */}
       <select
-        name="iconUrl"
-        value={iconUrl}
+        name="storeName"
+        value={storeName}
         onChange={(e) => {
-          setIconUrl(e.target.value);
+          const setIcon = icons?.[e.target.options.selectedIndex - 1];
+          if (setIcon !== undefined) {
+          setIconUrl(setIcon.image_url);
+          setStoreName(setIcon.name)
+          setMediaType(setIcon.media_type)
+          }
+          
         }}
         className="border rounded px-3 py-1 text-sm text-black"
       >
         <option value="">None</option>
-        {icons?.map((ico) => (
-          <option key={ico.key} value={ico.key}>
-            {ico.name}
+        {icons?.map((ico, index) => (
+          <option key={index} value={ico.name}>
+            {ico.name + " (" + ico.media_type + ")"}
           </option>
         ))}
       </select>
@@ -481,12 +486,10 @@ function PurchaseLinkForm({
 export default function AdminBooks({ loaderData }: Route["ComponentProps"]) {
   const { books, icons } = (loaderData as unknown as {
     books: BookWithPurchaseLinks[];
-    icons: { key: string; name: string }[];
+    icons: Icon[];
   });
   const [editingBookId, setEditingBookId] = useState<number | null>(null);
   const [editingLinkId, setEditingLinkId] = useState<number | null>(null);
-
-  const filteredIcons = icons.filter((icon) => icon.key !== "icons/");
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
@@ -636,7 +639,7 @@ export default function AdminBooks({ loaderData }: Route["ComponentProps"]) {
                             </h5>
                             <PurchaseLinkForm
                               bookId={book.id}
-                              icons={filteredIcons}
+                              icons={icons}
                             />
                           </div>
                         )}

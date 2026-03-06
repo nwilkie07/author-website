@@ -17,7 +17,7 @@ export interface PurchaseLink {
   store_name: string;
   url: string;
   icon_url: string | null;
-  media_type: string | null;
+  media_type: string;
   created_at: string;
   updated_at: string;
 }
@@ -48,7 +48,7 @@ export interface Icon {
   id: number;
   name: string;
   image_url: string;
-  format: string;
+  media_type: string;
   created_at: string;
   updated_at: string;
 }

@@ -8,6 +8,7 @@ export default [
   route("api/books", "routes/api.books.tsx"),
   route("api/email", "routes/api.email.ts"),
   route("api/contact", "routes/api.contact.ts"),
+  route("api/prefetch", "routes/api.prefetch.ts"),
   route("admin/icons", "routes/admin.icons.tsx"),
   route("admin/testimonials", "routes/admin.testimonials.tsx"),
   route("admin/content", "routes/admin.content.tsx"),

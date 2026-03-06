@@ -60,23 +60,23 @@ export default function Shop({ loaderData }: Route.ComponentProps) {
           {cachedBooksSync ? (
             (() => {
               const books = cachedBooksSync;
-              const bookItems: BookItem[] = books.map((it) => ({
+              const bookItems = (books.map((it: any) => ({
                 id: it.id,
                 name: it.name,
                 imageUrl: r2Image(it.image_url),
                 description: it.description,
                 seriesTitle: it.series_title,
                 seriesNumber: it.series_number,
-                byLine: it.by_line ?? "",
-                altText: it.alt_text ?? "",
+                byLine: it.by_line ?? '',
+                altText: it.alt_text ?? '',
                 purchaseLinks: it.purchase_links as PurchaseLink[],
-              }));
+              })) as unknown) as BookItem[];
               return <BookDisplay books={bookItems} />;
             })()
           ) : (
             <Suspense
               fallback={
-                <LoadingWrapper variant="carousel" className="flex w-[100vw]" />
+                <LoadingWrapper variant="grid" className="flex w-[100vw]" />
               }
             >
               <Await resolve={cachedBooks}>

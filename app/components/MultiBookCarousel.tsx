@@ -1,5 +1,4 @@
 import React from "react";
-import type { PurchaseLink } from "../types/db";
 import type { BookItem } from "~/types/books";
 
 type Props = {
@@ -34,7 +33,7 @@ export const MultiBookCarousel: React.FC<Props> = ({
               "flex flex-col lg:flex-row min-w-full max-w-full lg:min-w-[900px] lg:max-w-[900px] h-auto bg-white rounded-lg p-4 gap-4 lg:gap-16 webkit-fill-available"
             }
             style={{
-              scrollSnapAlign: "start",
+              scrollSnapAlign: "center",
             }}
           >
             <img
@@ -43,6 +42,7 @@ export const MultiBookCarousel: React.FC<Props> = ({
               className="h-[300px] lg:h-[500px] object-contain"
               style={{
                 width: imageWidth,
+                cursor: onImageClick ? "pointer" : "default",
               }}
               loading="lazy"
               onClick={() => {

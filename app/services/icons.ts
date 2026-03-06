@@ -11,7 +11,7 @@ export class IconsService {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         image_url TEXT NOT NULL,
-        format TEXT NOT NULL,
+        media_type TEXT NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )`
@@ -26,8 +26,11 @@ export class IconsService {
       if (!columns.includes("image_url")) {
         await this.db.prepare("ALTER TABLE icons ADD COLUMN image_url TEXT").run();
       }
-      if (!columns.includes("format")) {
-        await this.db.prepare("ALTER TABLE icons ADD COLUMN format TEXT").run();
+      if (!columns.includes("media_type")) {
+        await this.db.prepare("ALTER TABLE icons ADD COLUMN media_type TEXT").run();
+      }
+      if (!columns.includes("media_type")) {
+        await this.db.prepare("ALTER TABLE icons ADD COLUMN media_type TEXT NOT NULL DEFAULT ''").run();
       }
     } catch {
       // ignore migration errors
@@ -50,11 +53,11 @@ export class IconsService {
     return result;
   }
 
-  async createIcon(name: string, imageUrl: string, format: string): Promise<Icon> {
+  async createIcon(name: string, imageUrl: string, mediaType: string = ""): Promise<Icon> {
     await this.ensureTables();
     const result = await this.db
-      .prepare("INSERT INTO icons (name, image_url, format) VALUES (?, ?, ?) RETURNING *")
-      .bind(name, imageUrl, format)
+      .prepare("INSERT INTO icons (name, image_url, media_type) VALUES (?, ?, ?) RETURNING *")
+      .bind(name, imageUrl, mediaType)
       .first<Icon>();
     
     if (!result) {
@@ -63,11 +66,11 @@ export class IconsService {
     return result;
   }
 
-  async updateIcon(id: number, name: string, imageUrl: string, format: string): Promise<Icon | null> {
+  async updateIcon(id: number, name: string, imageUrl: string, mediaType: string = ""): Promise<Icon | null> {
     await this.ensureTables();
     const result = await this.db
-      .prepare("UPDATE icons SET name = ?, image_url = ?, format = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? RETURNING *")
-      .bind(name, imageUrl, format, id)
+      .prepare("UPDATE icons SET name = ?, image_url = ?,  media_type = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? RETURNING *")
+      .bind(name, imageUrl, mediaType, id)
       .first<Icon>();
     
     return result;

@@ -19,27 +19,33 @@ export function Navbar({ activePath }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   // Animate mobile menu links with staggered entrance
   const [showMenuLinks, setShowMenuLinks] = useState(false);
+  const [showBackdrop, setShowBackdrop] = useState(false);
   // Animate mobile menu links when the menu is opened
   useEffect(() => {
     if (menuOpen) {
-      const t = setTimeout(() => setShowMenuLinks(true), 60);
+      setShowBackdrop(true);
+      const t = setTimeout(() => setShowMenuLinks(true), 100);
       return () => {
         clearTimeout(t);
         setShowMenuLinks(false);
       };
     } else {
       setShowMenuLinks(false);
+      const t = setTimeout(() => setShowBackdrop(false), 250);
+      return () => clearTimeout(t);
     }
   }, [menuOpen]);
 
   return (
     <header className="bg-[#25384f] text-white py-4 z-5">
       <div className="flex flex-column align-center p-4 gap-8 items-center">
-        <img
-          src={"photos/author_logo.png"}
-          alt="Author logo of a fairy and the name Karen MacLeod-Wilkie"
-          className="w-32 h-12 sm:w-64 sm:h-24"
-        />
+        <Link to="/" className="flex">
+          <img
+            src={"photos/author_logo.png"}
+            alt="Author logo of a fairy and the name Karen MacLeod-Wilkie"
+            className="max-w-48 sm:max-w-64 sm:h-24 cursor-pointer"
+          />
+        </Link>
 
         <div className="container mx-auto px-6 flex items-center lg:justify-between justify-end">
           <nav className="hidden lg:flex gap-6 text-sm tracking-wider items-center">
@@ -88,13 +94,23 @@ export function Navbar({ activePath }: NavbarProps) {
         </div>
       </div>
 
-      {menuOpen && (
-        <div className="fixed inset-0 z-50 bg-[#25384f] flex flex-col">
+      {showBackdrop && (
+        <div
+          className="fixed inset-0 z-50 bg-[#25384f] flex flex-col"
+          style={{
+            opacity: menuOpen ? 1 : 0,
+            transition: "opacity 0.25s ease-out",
+          }}
+        >
           <div className="flex justify-end p-4">
             <button
               onClick={() => setMenuOpen(false)}
               aria-label="Close menu"
-              className="text-[#F3E3DD]"
+              className="text-[#F3E3DD] hover:opacity-70 transition-opacity duration-200"
+              style={{
+                transform: menuOpen ? "scale(1) rotate(0deg)" : "scale(0.8)",
+                transition: "transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+              }}
             >
               <svg
                 width="48"
@@ -115,24 +131,32 @@ export function Navbar({ activePath }: NavbarProps) {
               const isActive = activePath === link.to;
               return (
                 <Link
-                  key={link.to}
-                  to={link.to}
-                  prefetch="intent"
-                  className={`text-[#F3E3DD] text-3xl font-[athelas-web] font-thin ${isActive ? "opacity-50" : ""} ${showMenuLinks ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
-                  style={{
-                    transition: `opacity 0.25s ease-out, transform 0.25s ease-out`,
-                    transitionDelay: showMenuLinks ? `${idx * 60}ms` : "0ms",
-                  }}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {link.label}
+                   key={link.to}
+                   to={link.to}
+                   prefetch="intent"
+                   className={`text-[#F3E3DD] text-3xl font-[athelas-web] font-thin hover:opacity-70 transition-opacity duration-200 ${isActive ? "opacity-50" : ""}`}
+                    style={{
+                      opacity: showMenuLinks ? 1 : 0,
+                      transform: showMenuLinks ? "translateY(0)" : "translateY(16px)",
+                      transition: `opacity 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)`,
+                      transitionDelay: showMenuLinks ? `${idx * 80}ms` : `0ms`,
+                    }}
+                   onClick={() => setMenuOpen(false)}
+                 >
+                   {link.label}
                 </Link>
               );
             })}
             <Link
               to="/shop"
               prefetch="intent"
-              className="bg-[#F3E3DD] text-[#0e2a48] px-8 py-3 rounded-full text-xl mt-4"
+              className="bg-[#F3E3DD] text-[#0e2a48] px-8 py-3 rounded-full text-xl mt-4 hover:shadow-lg transition-shadow duration-200"
+              style={{
+                opacity: showMenuLinks ? 1 : 0,
+                transform: showMenuLinks ? "scale(1)" : "scale(0.9)",
+                transition: `opacity 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)`,
+                transitionDelay: showMenuLinks ? `${navLinks.length * 100}ms` : "0ms",
+              }}
               onClick={() => setMenuOpen(false)}
             >
               Shop For Books

@@ -138,12 +138,14 @@ export function Footer({
       <footer className="bg-[#25384f] text-white py-8 text-sm">
         <div className="container mx-auto px-3 sm:px-6 flex flex-col lg:flex-row justify-between items-center gap-4">
           <div>
-            <img
-              src={"photos/author_logo.png"}
-              alt="Author logo of a fairy and the name Karen MacLeod-Wilkie"
-              className="w-32 h-12"
-              loading="lazy"
-            />
+            <Link to="/">
+              <img
+                src={"photos/author_logo.png"}
+                alt="Author logo of a fairy and the name Karen MacLeod-Wilkie"
+                className="w-32 h-12 cursor-pointer"
+                loading="lazy"
+              />
+            </Link>
           </div>
           <div className="flex grow-3 gap-3 text-[#E3D2CB] text-xl justify-center">
             {!isMobile ? (
@@ -166,7 +168,11 @@ export function Footer({
                 <Link to="/" prefetch="intent">
                   <House />
                 </Link>
-                <Link to="/about" prefetch="intent" className="flex gap-8 stroke-white">
+                <Link
+                  to="/about"
+                  prefetch="intent"
+                  className="flex gap-8 stroke-white"
+                >
                   <CircleUserRound />
                 </Link>
                 <Link to="/emails" prefetch="intent">

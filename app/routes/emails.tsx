@@ -191,14 +191,16 @@ function CampaignGrid({
                   )
                 : campaign.status}
             </div>
-            {campaign.parsedContent !== null &&
-              campaign.parsedContent[0] !== null && (
+            {campaign.parsedContent &&
+              campaign.parsedContent.length > 0 &&
+              campaign.parsedContent[0] != null && (
                 <h3 className="font-semibold text-lg text-[#25384F]">
                   {stripHtml(campaign.parsedContent[0])}
                 </h3>
               )}
-            {campaign.parsedContent !== null &&
-              campaign.parsedContent[1] !== null && (
+            {campaign.parsedContent &&
+              campaign.parsedContent.length > 1 &&
+              campaign.parsedContent[1] != null && (
                 <p className="text-sm text-gray-600 line-clamp-2 mt-auto">
                   {stripHtml(campaign.parsedContent[1])}
                 </p>

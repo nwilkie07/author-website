@@ -9,6 +9,7 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import { usePrefetchAllPages } from "~/hooks/usePrefetchAllPages";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -42,6 +43,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  // Prefetch and cache all public page data after the initial page load so
+  // that navigating to any page skips loading skeletons entirely.
+  usePrefetchAllPages();
+
   return <Outlet />;
 }
 

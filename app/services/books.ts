@@ -118,11 +118,11 @@ export class BooksService {
     return result.results;
   }
 
-  async createPurchaseLink(bookId: number, storeName: string, url: string, iconUrl?: string): Promise<PurchaseLink> {
+  async createPurchaseLink(bookId: number, storeName: string, url: string, iconUrl: string, media_type: string): Promise<PurchaseLink> {
     await this.ensureTables();
     const result = await this.db
-      .prepare("INSERT INTO purchase_links (book_id, store_name, url, icon_url) VALUES (?, ?, ?, ?) RETURNING *")
-      .bind(bookId, storeName, url, iconUrl || null)
+      .prepare("INSERT INTO purchase_links (book_id, store_name, url, icon_url, media_type) VALUES (?, ?, ?, ?, ?) RETURNING *")
+      .bind(bookId, storeName, url, iconUrl, media_type)
       .first<PurchaseLink>();
     
     if (!result) {
@@ -131,11 +131,11 @@ export class BooksService {
     return result;
   }
 
-  async updatePurchaseLink(id: number, storeName: string, url: string, iconUrl?: string): Promise<PurchaseLink | null> {
+  async updatePurchaseLink(id: number, storeName: string, url: string, iconUrl: string, media_type: string): Promise<PurchaseLink | null> {
     await this.ensureTables();
     const result = await this.db
-      .prepare("UPDATE purchase_links SET store_name = ?, url = ?, icon_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? RETURNING *")
-      .bind(storeName, url, iconUrl || null, id)
+      .prepare("UPDATE purchase_links SET store_name = ?, url = ?, icon_url = ?, media_type = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? RETURNING *")
+      .bind(storeName, url, iconUrl, media_type, id)
       .first<PurchaseLink>();
     
     return result;
