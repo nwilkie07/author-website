@@ -1,4 +1,4 @@
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useRef } from "react";
 import { Await } from "react-router";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
@@ -6,7 +6,6 @@ import type { PageContent } from "~/types/db";
 import LoadingWrapper from "~/components/LoadingWrapper";
 import { sanitizeHTML } from "../utils/sanitizeHTML";
 import { Facebook, Instagram } from "lucide-react";
-import { r2Image } from "~/utils/images";
 import { readFromCacheSync, usePageContentCache } from "~/hooks/useDataCache";
 
 declare global {
@@ -42,23 +41,18 @@ export default function Contact({
     "idle" | "loading" | "success" | "error"
   >("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const turnstileContainerRef = useRef<HTMLDivElement>(null);
+  const turnstileWidgetId = useRef<string | undefined>(undefined);
 
   useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
-    script.async = true;
-    script.defer = true;
-    document.body.appendChild(script);
+    const scriptId = "cf-turnstile-script";
+    let script = document.getElementById(scriptId) as HTMLScriptElement | null;
 
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (window.turnstile) {
-      window.turnstile.render("#turnstile-container", {
-        sitekey: "0x4AAAAAAADLtFmEW1iKj5Xy",
+    const renderWidget = () => {
+      if (!window.turnstile || !turnstileContainerRef.current) return;
+      if (turnstileWidgetId.current !== undefined) return;
+      turnstileWidgetId.current = window.turnstile.render(turnstileContainerRef.current, {
+        sitekey: "0x4AAAAAAClquy2VcfRA4_aR",
         callback: (token: string) => {
           setTurnstileToken(token);
         },
@@ -69,7 +63,28 @@ export default function Contact({
           setTurnstileToken("");
         },
       });
+    };
+
+    if (!script) {
+      script = document.createElement("script");
+      script.id = scriptId;
+      script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+      script.async = true;
+      script.onload = renderWidget;
+      document.head.appendChild(script);
+    } else if (window.turnstile) {
+      // Script already loaded (e.g. hot reload), render immediately
+      renderWidget();
+    } else {
+      script.addEventListener("load", renderWidget);
     }
+
+    return () => {
+      if (turnstileWidgetId.current !== undefined && window.turnstile) {
+        window.turnstile.reset(turnstileWidgetId.current);
+        turnstileWidgetId.current = undefined;
+      }
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -311,7 +326,7 @@ export default function Contact({
                   />
                 </div>
                 <div className="flex justify-center my-4">
-                  <div id="turnstile-container"></div>
+                  <div ref={turnstileContainerRef}></div>
                 </div>
               </div>
               {status === "error" && (

@@ -8,7 +8,7 @@ import { MailchimpService } from "~/services/mailchimp";
 
 export function meta({}: Route["MetaArgs"]) {
   return [
-    { title: "New React Router App" },
+    { title: "Karen MacLeod-Wilkie Author" },
     { name: "description", content: "Welcome to React Router!" },
   ];
 }

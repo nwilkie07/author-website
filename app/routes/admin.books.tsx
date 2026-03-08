@@ -264,9 +264,10 @@ function BookForm({ book, onCancel }: { book?: Book; onCancel?: () => void }) {
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Alt Text
         </label>
-        <input
-          type="text"
+        <textarea
+          name="alt text"
           value={altText}
+          rows={4}
           onChange={(e) => setAltText(e.currentTarget.value)}
           className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
           placeholder="Alt text for accessibility (optional)"
