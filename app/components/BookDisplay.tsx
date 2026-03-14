@@ -52,7 +52,7 @@ export function BookDisplay({
             </div>
           </div>
           <MultiBookCarousel
-            containerClassName="px-8"
+            containerClassName="lg:px-8 px-2"
             onImageClick={handleImageClick}
             items={books}
           />

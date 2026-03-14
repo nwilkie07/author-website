@@ -20,7 +20,7 @@ export const MultiBookCarousel: React.FC<Props> = ({
   return (
     <div className={containerClassName}>
       <div
-        className="flex gap-4 h-auto overflow-x-auto py-2 px-8"
+        className="flex gap-4 h-auto overflow-x-auto py-2 lg:px-8 px-2"
         style={{
           scrollSnapType: "x mandatory",
           justifyContent: items.length > 1 ? "start" : "center",

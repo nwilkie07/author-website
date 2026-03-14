@@ -71,6 +71,10 @@ export default function Contact({
       script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
       script.async = true;
       script.onload = renderWidget;
+      script.onerror = () => {
+        setErrorMessage("Captcha failed to load. This may be caused by an ad blocker. Please disable it for this page and try again.");
+        setStatus("error");
+      };
       document.head.appendChild(script);
     } else if (window.turnstile) {
       // Script already loaded (e.g. hot reload), render immediately
