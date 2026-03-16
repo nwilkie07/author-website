@@ -8,7 +8,6 @@
 	"compatibility_date": "2025-04-04",
 	"main": "./workers/app.ts",
 	"vars": {
-		"VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare",
 	},
 	"observability": {
 		"enabled": true,
@@ -33,6 +32,26 @@
 			"binding": "KV_CACHE",
 			"id": "8822fbd43f014105b2132491fa4731b4",
 		},
+	],
+	"routes": [
+		{
+			"pattern": "www.kmacleodwilkie.com/*",
+			"zone_name": "kmacleodwilkie.com"
+		},
+		{
+			"pattern": "www.kmacleodwilkie.ca/*",
+			"zone_name": "kmacleodwilkie.ca"
+		},
+		{
+			"pattern": "kmacleodwilkie.ca",
+			"zone_name": "kmacleodwilkie.ca",
+			"custom_domain": true
+		},
+		{
+			"pattern": "kmacleodwilkie.com",
+			"zone_name": "kmacleodwilkie.com",
+			"custom_domain": true
+		}
 	],
 	/**
    * Smart Placement

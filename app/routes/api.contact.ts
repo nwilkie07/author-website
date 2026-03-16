@@ -10,6 +10,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   const toEmail = context.cloudflare.env.CONTACT_FORM_TO_EMAIL;
   const turnstileSecretKey = context.cloudflare.env.TURNSTILE_SECRET_KEY;
+  const sendgridApiKey = context.cloudflare.env.SENDGRID_API_KEY;
 
   if (!toEmail) {
     return new Response(JSON.stringify({ error: "Contact form email not configured" }), {
@@ -25,15 +26,23 @@ export async function action({ request, context }: Route.ActionArgs) {
     });
   }
 
+  if (!sendgridApiKey) {
+    return new Response(JSON.stringify({ error: "Email service not configured" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   try {
     const body = await request.json() as { 
       name?: string; 
       email?: string; 
       subject?: string; 
       message?: string;
+      sendCopy?: boolean;
       "cf-turnstile-response"?: string;
     };
-    const { name, email, subject, message, "cf-turnstile-response": turnstileToken } = body;
+    const { name, email, subject, message, sendCopy, "cf-turnstile-response": turnstileToken } = body;
 
     if (!name || !email || !message) {
       return new Response(JSON.stringify({ error: "Name, email, and message are required" }), {
@@ -70,20 +79,22 @@ export async function action({ request, context }: Route.ActionArgs) {
       });
     }
 
-    const mailchannelsResponse = await fetch("https://api.mailchannels.net/api/v1/send", {
+    const sendgridResponse = await fetch("https://api.sendgrid.com/v3/mail/send", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${sendgridApiKey}`,
       },
       body: JSON.stringify({
         personalizations: [
           {
-            to: [{ email: toEmail, name: "Author Website" }],
+            to: [{ email: toEmail }],
+            ...(sendCopy ? { cc: [{ email: email, name: name }] } : {}),
           },
         ],
         from: {
-          email: "noreply@yourdomain.com",
-          name: "Author Website Contact",
+          email: "noreply@kmacleodwilkie.com",
+          name: "K. MacLeod Wilkie Contact Form",
         },
         reply_to: { email: email, name: name },
         subject: subject ? `Contact Form: ${subject}` : "Contact Form Submission",
@@ -107,9 +118,9 @@ export async function action({ request, context }: Route.ActionArgs) {
       }),
     });
 
-    if (!mailchannelsResponse.ok) {
-      const errorText = await mailchannelsResponse.text();
-      console.error("Mailchannels error:", errorText);
+    if (!sendgridResponse.ok) {
+      const errorText = await sendgridResponse.text();
+      console.error("SendGrid error:", errorText);
       return new Response(JSON.stringify({ error: "Failed to send message" }), {
         status: 500,
         headers: { "Content-Type": "application/json" },

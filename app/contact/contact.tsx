@@ -35,7 +35,9 @@ export default function Contact({
   const [fname, setFname] = useState("");
   const [lname, setLname] = useState("");
   const [email, setEmail] = useState("");
+  const [subject, setSubject] = useState("");
   const [messageText, setMessageText] = useState("");
+  const [sendCopy, setSendCopy] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
   const [status, setStatus] = useState<
     "idle" | "loading" | "success" | "error"
@@ -109,7 +111,9 @@ export default function Contact({
         body: JSON.stringify({
           name: `${fname} ${lname}`.trim(),
           email,
+          subject,
           message: messageText,
+          sendCopy,
           "cf-turnstile-response": turnstileToken,
         }),
       });
@@ -130,7 +134,9 @@ export default function Contact({
       setFname("");
       setLname("");
       setEmail("");
+      setSubject("");
       setMessageText("");
+      setSendCopy(false);
       setTurnstileToken("");
     } catch (error) {
       setStatus("error");
@@ -241,7 +247,7 @@ export default function Contact({
         />
         <div className="flex w-full justify-center bg-[#25384F] w-[50%] p-8 md:pt-8">
           {status === "success" ? (
-            <div className="text-[#25384F] text-xl font-[AthelasBook] py-8">
+            <div className="text-white text-xl font-[AthelasBook] py-8">
               Thank you!
             </div>
           ) : (
@@ -254,7 +260,7 @@ export default function Contact({
                 <legend className="title">
                   <div className="font-[athelas] text-2xl">Contact Form</div>
                 </legend>
-                <div className="flex w-full gap-4">
+                <div className="flex w-full gap-4 flex-col md:flex-row">
                   <div className="field first-name flex flex-col w-full gap-2">
                     <label className="caption" htmlFor="fname-field">
                       <div className="flex gap-2 font-[athelasbook] items-center font-[athelasbook]">
@@ -314,10 +320,26 @@ export default function Contact({
                     className="w-full px-4 py-3 border border-gray-300 rounded bg-white outline-[#E3D2CB] outline-offset-4 text-black"
                   />
                 </div>
+                <div className="form-item field flex flex-col gap-2">
+                  <label htmlFor="subject-field" className="title">
+                    <div className="flex gap-2 font-[athelasbook] items-center">
+                      <span className="text-xl">Subject</span>
+                    </div>
+                  </label>
+                  <input
+                    aria-invalid="false"
+                    id="subject-field"
+                    type="text"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded bg-white outline-[#E3D2CB] outline-offset-4 text-black"
+                  />
+                </div>
                 <div className="form-item field textarea required flex flex-col gap-2">
                   <label htmlFor="message-field" className="title">
-                    <div>
-                      <span className="font-[athelasbook]">Message (required)</span>
+                    <div className="flex gap-2 font-[athelasbook] items-center font-[athelasbook]">
+                      <span className="text-xl">Message</span>
+                      <span className="text-[#bec3cb] text-l">(required)</span>
                     </div>
                   </label>
                   <textarea
@@ -328,6 +350,18 @@ export default function Contact({
                     required
                     className="w-full px-4 py-3 border border-gray-300 rounded h-32 bg-white outline-[#E3D2CB] outline-offset-4 text-black"
                   />
+                </div>
+                <div className="form-item flex items-center gap-3">
+                  <input
+                    id="send-copy-field"
+                    type="checkbox"
+                    checked={sendCopy}
+                    onChange={(e) => setSendCopy(e.target.checked)}
+                    className="w-4 h-4 accent-[#E3D2CB] cursor-pointer"
+                  />
+                  <label htmlFor="send-copy-field" className="font-[athelasbook] text-xl cursor-pointer">
+                    Send me a copy
+                  </label>
                 </div>
                 <div className="flex justify-center my-4">
                   <div ref={turnstileContainerRef}></div>

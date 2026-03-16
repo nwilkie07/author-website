@@ -22,7 +22,6 @@ export function createPageContentLoader(page: string) {
       });
 
     return {
-      message: context.cloudflare.env.VALUE_FROM_CLOUDFLARE,
       pageContent,
     };
   };

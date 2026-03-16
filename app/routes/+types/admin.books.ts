@@ -5,7 +5,6 @@ export type Route = {
       cloudflare: {
         env: {
           DB: any;
-          VALUE_FROM_CLOUDFLARE?: string;
           IMAGES_BUCKET: any;
         };
       };

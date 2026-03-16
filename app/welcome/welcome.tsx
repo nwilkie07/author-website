@@ -13,12 +13,10 @@ import { useScreenSize } from "~/hooks/useScreenSize";
 import { useDataCache, usePageContentCache } from "~/hooks/useDataCache";
 
 export function Welcome({
-  message,
   books,
   pageContent,
   testimonials,
 }: {
-  message: string;
   books: BookWithPurchaseLinks[] | Promise<BookWithPurchaseLinks[]>;
   pageContent: PageContent[] | Promise<PageContent[]>;
   testimonials: Testimonial[] | Promise<Testimonial[]>;

@@ -51,7 +51,6 @@ export function loader({ context }: Route["LoaderArgs"]) {
   }
 
   return {
-    message: context.cloudflare.env.VALUE_FROM_CLOUDFLARE,
     books: booksPromise,
     pageContent: pageContentPromise,
     testimonials: testimonialsPromise,
@@ -61,7 +60,6 @@ export function loader({ context }: Route["LoaderArgs"]) {
 export default function Home({ loaderData }: Route["ComponentProps"]) {
   return (
     <Welcome
-      message={loaderData.message}
       books={loaderData.books}
       pageContent={loaderData.pageContent}
       testimonials={loaderData.testimonials}
