@@ -1,3 +1,20 @@
+/**
+ * Modal — purchase link selection dialog for a single book.
+ *
+ * Opens when a user clicks a book cover or "Buy It" button in BookDisplay.
+ * Displays all purchase links grouped by media type with a tab bar:
+ *  - "All" tab shows every link sorted by store name.
+ *  - Individual tabs (e-book, paperback, audiobook) show filtered links.
+ *  - Tab order is fixed: All → e-book → paperback → audiobook.
+ *
+ * Each link renders with the store's icon image (from R2) and a store name
+ * label. Links with entrance animations are staggered by index.
+ *
+ * Accessibility / UX:
+ *  - Body scroll is locked (`overflow: hidden`) while the modal is open.
+ *  - Clicking the backdrop or the × button closes the modal.
+ *  - `isOpen` is controlled externally by the parent (BookDisplay).
+ */
 import { useEffect, useState } from "react";
 import type { PurchaseLink } from "../types/db";
 import { r2Image } from "~/utils/images";

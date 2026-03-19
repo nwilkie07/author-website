@@ -1,3 +1,20 @@
+/**
+ * Navbar — site-wide navigation header.
+ *
+ * Renders the author logo, desktop navigation links, a "Shop For Books" CTA,
+ * and a hamburger button for mobile viewports.
+ *
+ * Mobile menu behaviour:
+ *  - Tapping the hamburger opens a full-screen overlay.
+ *  - Navigation links animate in with a staggered entrance (100 ms delay per
+ *    link) using CSS transitions triggered by `showMenuLinks` state.
+ *  - The backdrop fades in slightly before the links appear.
+ *  - Body scroll is locked while the menu is open.
+ *
+ * @prop activePath - The current route path, used to apply an active underline
+ *                    to the matching nav link.
+ * @prop authorName - Unused legacy prop; kept for API compatibility.
+ */
 import { Link } from "react-router";
 import { useState, useEffect } from "react";
 import { r2Image } from "~/utils/images";

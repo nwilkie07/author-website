@@ -1,3 +1,15 @@
+/**
+ * BookDisplay — renders the full book catalogue grouped into series carousels.
+ *
+ * Accepts a flat array of `BookItem`s and partitions them inline (mirroring
+ * the logic in `processBooks`) into:
+ *  - Series groups — each rendered as a titled `<MultiBookCarousel>`.
+ *  - Standalone books — rendered as an untitled `<MultiBookCarousel>`.
+ *
+ * Clicking any book's cover or "Buy It" button opens the `<Modal>` with that
+ * book's purchase links. Only one modal is ever open at a time; the selected
+ * book is tracked via `selectedLinks` / `selectedTitle` state.
+ */
 import { useState } from "react";
 import type { PurchaseLink } from "../types/db";
 import type { BookItem, SeriesGroup } from "../types/books";

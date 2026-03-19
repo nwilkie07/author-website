@@ -1,3 +1,12 @@
+/**
+ * GET /api/books
+ *
+ * Returns all books with their purchase links as a JSON array.
+ * Used as a lightweight JSON endpoint for external consumers or direct
+ * client fetches.
+ *
+ * Response shape: { books: BookWithPurchaseLinks[] }
+ */
 import { BooksService } from "../services/books";
 
 export async function GET({ context }: { context: any }) {

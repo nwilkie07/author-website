@@ -1,3 +1,19 @@
+/**
+ * Skeleton primitives — pure presentational loading placeholder components.
+ *
+ * All components use a CSS `animate-pulse` Tailwind class to produce the
+ * standard grey pulsing effect. They are stateless and accept only simple
+ * dimension/layout props.
+ *
+ * Exports:
+ *  - `SkeletonImage`      — a pulsing rectangle representing an image.
+ *  - `SkeletonLine`       — a single pulsing line representing a text row.
+ *  - `SkeletonTextBlock`  — N stacked `SkeletonLine`s with the last line
+ *                           shorter (mimics a natural paragraph end).
+ *  - `SkeletonGroup`      — N alternating-width lines (for varied text blocks).
+ *
+ * These are consumed by `LoadingWrapper` to build page-level skeleton layouts.
+ */
 import React from "react";
 
 type BaseProps = { height?: number; width?: string; label?: string };

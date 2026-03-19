@@ -1,3 +1,15 @@
+/**
+ * About — author biography page component.
+ *
+ * Two-column layout (stacks on mobile):
+ *  - Left: CMS-driven title and rich-text description rendered with
+ *    DOMPurify-sanitized `dangerouslySetInnerHTML`.
+ *  - Right: Author photo served from R2 via the `/images/*` proxy.
+ *
+ * Uses `readFromCacheSync` to check for a valid localStorage cache entry
+ * before mounting, allowing the `<Suspense>` boundary to be skipped entirely
+ * on repeat visits (instant render with no skeleton flash).
+ */
 import { Suspense } from "react";
 import { Await } from "react-router";
 import { r2Image } from "../utils/images";

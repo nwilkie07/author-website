@@ -1,3 +1,18 @@
+/**
+ * /api/email — dual-purpose Mailchimp API endpoint.
+ *
+ * GET  /api/email?campaignId=<id>
+ *   Returns the raw HTML content of a single Mailchimp campaign.
+ *   Used by the emails page to fetch full newsletter HTML on demand (after the
+ *   user clicks a campaign card) rather than loading all content upfront.
+ *   Results are served from KV cache when available.
+ *
+ * POST /api/email  { email, firstName?, lastName? }
+ *   Subscribes an email address to the configured Mailchimp audience list.
+ *   Used by the newsletter sign-up form in the site footer.
+ *
+ * Required env secrets: MAIL_CHIMP_API, MAIL_CHIMP_LIST_ID (POST only)
+ */
 import type { Route } from "./+types/api.email";
 import { MailchimpService } from "../services/mailchimp";
 

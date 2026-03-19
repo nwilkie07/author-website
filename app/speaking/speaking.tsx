@@ -1,3 +1,14 @@
+/**
+ * Speaking — speaking engagements / booking page component.
+ *
+ * Full-width hero image followed by a CMS-driven content section containing:
+ *  - Page title
+ *  - Rich-text description (sanitized via `sanitizeHTML` before rendering)
+ *  - "Book Me" CTA button
+ *
+ * Page content is fetched via the `createPageContentLoader("speaking")` loader
+ * and cached client-side for one hour with `useDataCache`.
+ */
 import { Suspense } from "react";
 import { Await } from "react-router";
 import { Navbar } from "../components/Navbar";

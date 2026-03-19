@@ -1,3 +1,17 @@
+/**
+ * Footer — site-wide footer with optional newsletter sign-up.
+ *
+ * Features:
+ *  - Logo + copyright line.
+ *  - Navigation link row that adapts responsively: full text labels on
+ *    desktop/tablet, icon-only links (Lucide icons) on mobile.
+ *  - Optional newsletter sign-up form (controlled by `showNewsletter`).
+ *    The form POSTs `{ email, firstName, lastName }` to `/api/email` and
+ *    displays inline success/error feedback.
+ *
+ * @prop showNewsletter - Whether to render the newsletter sign-up form (default: true).
+ * @prop logoText       - Unused legacy prop; kept for API compatibility.
+ */
 import { Link } from "react-router";
 import React from "react";
 import { r2Image } from "~/utils/images";
@@ -10,7 +24,7 @@ import {
   Mic,
   Newspaper,
   ShoppingBasket,
-} from "lucide-react"; // Import the House icon from lucide-react
+} from "lucide-react";
 
 type FooterProps = {
   showNewsletter?: boolean;

@@ -1,3 +1,14 @@
+/**
+ * TestimonialsService — D1 data access layer for reader testimonials.
+ *
+ * Testimonials are short quotes shown in the `TestimonialCarousel` on the
+ * home page. Each row stores the reviewer's name, a quote (`description`),
+ * and the store/platform they purchased from.
+ *
+ * Unlike `BooksService` and `IconsService`, this service does not need to
+ * self-bootstrap a table because `testimonials` is expected to be created
+ * as part of the initial database migration.
+ */
 import type { Testimonial } from "../types/db";
 
 export class TestimonialsService {

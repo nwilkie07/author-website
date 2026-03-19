@@ -1,3 +1,13 @@
+/**
+ * IconsService — D1 data access layer for the store icon library.
+ *
+ * Icons are small images (SVG/PNG) that appear on purchase link buttons in the
+ * `Modal` component. Each icon has a `media_type` (e-book / audiobook /
+ * paperback) so they can be filtered and grouped in the UI.
+ *
+ * Like `BooksService`, this class self-bootstraps the `icons` table and runs
+ * any pending column migrations on first use.
+ */
 import type { Icon } from "../types/db";
 
 export class IconsService {

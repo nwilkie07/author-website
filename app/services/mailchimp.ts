@@ -1,3 +1,27 @@
+/**
+ * MailchimpService — Mailchimp REST API v3 client with KV-backed caching.
+ *
+ * Wraps two sets of operations:
+ *
+ *  1. **Campaign reading** — fetches the sent campaign list and per-campaign
+ *     HTML content for the `/emails` newsletters page. Results are cached in
+ *     Cloudflare KV for one hour (TTL is managed natively by KV's
+ *     `expirationTtl` option — no manual timestamp math required). Cache
+ *     writes are fire-and-forget so they never block the response.
+ *
+ *  2. **List subscription** — subscribes a new email address to the configured
+ *     Mailchimp audience list (used by the newsletter sign-up form in the
+ *     Footer and the `/api/email` POST action).
+ *
+ * KV cache keys:
+ *  - `mailchimp_campaigns_<limit>` — serialised `MailchimpCampaign[]`
+ *  - `mailchimp_content_<campaignId>` — raw HTML string
+ *
+ * The `warmCache` method is designed to be called via `ctx.waitUntil()` on
+ * the home page load so the `/emails` page is fast on first visit.
+ */
+
+/** Normalised shape of a single Mailchimp campaign as used by the UI. */
 export type MailchimpCampaign = {
   id: string;
   web_id: number;
@@ -30,6 +54,10 @@ export class MailchimpService {
     this.kv = kv ?? null;
   }
 
+  /**
+   * Internal fetch helper. Prepends the Mailchimp API base URL, attaches
+   * Basic auth, and throws a descriptive error on non-2xx responses.
+   */
   private async fetchMailchimp(endpoint: string, options: RequestInit = {}): Promise<any> {
     const url = `https://${this.serverPrefix}.api.mailchimp.com/3.0${endpoint}`;
 
@@ -50,6 +78,11 @@ export class MailchimpService {
     return response.json();
   }
 
+  /**
+   * Returns up to `limit` sent campaigns, sorted by send time descending.
+   * Checks KV first; falls back to the Mailchimp API and writes the result
+   * to KV for subsequent requests. Returns `[]` on any API error.
+   */
   async getCampaigns(limit: number = 10): Promise<MailchimpCampaign[]> {
     const cacheKey = `${CAMPAIGNS_CACHE_KEY}_${limit}`;
 
@@ -98,6 +131,11 @@ export class MailchimpService {
     }
   }
 
+  /**
+   * Returns the raw HTML content for a single campaign.
+   * Checks KV first; falls back to the Mailchimp API and caches the result.
+   * Returns `null` if the content cannot be fetched.
+   */
   async getCampaignContent(campaignId: string): Promise<string | null> {
     const cacheKey = `${CONTENT_CACHE_PREFIX}${campaignId}`;
 
@@ -129,6 +167,10 @@ export class MailchimpService {
     }
   }
 
+  /**
+   * Force-refreshes the campaign list by evicting the KV entry then
+   * re-fetching from the Mailchimp API.
+   */
   async refreshCampaigns(limit: number = 10): Promise<MailchimpCampaign[]> {
     const cacheKey = `${CAMPAIGNS_CACHE_KEY}_${limit}`;
     if (this.kv) {
@@ -137,6 +179,7 @@ export class MailchimpService {
     return this.getCampaigns(limit);
   }
 
+  /** Force-refreshes the HTML content for a single campaign. */
   async refreshCampaignContent(campaignId: string): Promise<string | null> {
     const cacheKey = `${CONTENT_CACHE_PREFIX}${campaignId}`;
     if (this.kv) {
@@ -158,6 +201,12 @@ export class MailchimpService {
     await Promise.all(campaigns.map((c) => this.getCampaignContent(c.id)));
   }
 
+  /**
+   * Subscribes an email address to a Mailchimp audience list.
+   *
+   * @returns `{ success: true }` on success, or `{ success: false, error }` if
+   *          the address is already subscribed or the API call fails.
+   */
   async subscribe(
     listId: string,
     email: string,

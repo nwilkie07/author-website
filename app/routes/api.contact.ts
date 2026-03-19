@@ -1,3 +1,19 @@
+/**
+ * POST /api/contact
+ *
+ * Handles contact form submissions. The full pipeline is:
+ *  1. Validate required env vars (CONTACT_FORM_TO_EMAIL, TURNSTILE_SECRET_KEY,
+ *     SENDGRID_API_KEY) — returns 500 if any are missing.
+ *  2. Parse and validate the request body (name, email, message required).
+ *  3. Verify the Cloudflare Turnstile CAPTCHA token against the siteverify API.
+ *  4. Send the email via the SendGrid v3 API.
+ *     - `to`:      CONTACT_FORM_TO_EMAIL (the author's inbox)
+ *     - `from`:    noreply@kmacleodwilkie.com (must be a verified sender in SendGrid)
+ *     - `reply_to`: the submitter's email so the author can reply directly
+ *     - `cc`:      the submitter's email when `sendCopy: true` is in the body
+ *
+ * Required env secrets: CONTACT_FORM_TO_EMAIL, TURNSTILE_SECRET_KEY, SENDGRID_API_KEY
+ */
 import type { Route } from "./+types/api.contact";
 
 export async function action({ request, context }: Route.ActionArgs) {

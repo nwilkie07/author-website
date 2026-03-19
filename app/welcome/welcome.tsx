@@ -1,3 +1,20 @@
+/**
+ * Welcome — home page component.
+ *
+ * Renders the full home page layout:
+ *  1. Hero section — full-viewport background image with a CTA button.
+ *  2. Book catalogue — `<BookDisplay>` wrapped in `<Suspense>`/`<Await>` for
+ *     deferred book data. On repeat visits, `useDataCache` resolves from
+ *     localStorage so the skeleton never flashes.
+ *  3. Bio section — two-column layout with a CMS-driven rich-text block
+ *     (DOMPurify-sanitized) and an author photo. Adapts to single-column on
+ *     mobile via `useScreenSize`.
+ *  4. Testimonial carousel — `<TestimonialCarousel>` with deferred data.
+ *  5. Footer with newsletter sign-up.
+ *
+ * All three deferred data streams (books, pageContent, testimonials) are
+ * cached client-side for one hour via `useDataCache` / `usePageContentCache`.
+ */
 import { Suspense } from "react";
 import { Link } from "react-router";
 import { Await } from "react-router";

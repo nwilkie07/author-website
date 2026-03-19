@@ -1,3 +1,21 @@
+/**
+ * DragDropUploader — reusable file drag-and-drop / click-to-browse input.
+ *
+ * Handles three interaction modes:
+ *  1. Click — opens the native file picker via a hidden `<input type="file">`.
+ *  2. Drag-over — highlights the drop zone with a border colour change.
+ *  3. Drop — accepts the first dropped file.
+ *
+ * On file selection (either mode):
+ *  - Calls `onPreviewChange` with a data-URL so the parent can show a preview.
+ *  - Calls `onFileSelected` (which may return a Promise) and shows a spinner
+ *    overlay until the upload Promise resolves or rejects.
+ *
+ * @prop accept          - MIME type filter for the file picker (default: "image/*").
+ * @prop onFileSelected  - Called with the selected `File`; may be async.
+ * @prop onPreviewChange - Called with a data-URL string (or null on reset).
+ * @prop label           - Optional label text rendered inside the drop zone.
+ */
 import React, { useRef, useState } from "react";
 
 export default function DragDropUploader({

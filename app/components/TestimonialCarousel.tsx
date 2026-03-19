@@ -1,3 +1,16 @@
+/**
+ * TestimonialCarousel — accessible carousel for reader testimonial quotes.
+ *
+ * Renders a single testimonial at a time with previous/next navigation
+ * buttons and a dot-indicator row for direct index navigation. The active
+ * index wraps around at both ends (circular navigation).
+ *
+ * `goToNext` and `goToPrevious` are memoised with `useCallback` to avoid
+ * unnecessary re-renders if the component is used inside a larger tree.
+ *
+ * Returns `null` if the `testimonials` array is empty, so callers do not
+ * need to guard against rendering an empty carousel.
+ */
 import { useState, useCallback } from "react";
 import type { Testimonial } from "../types/db";
 

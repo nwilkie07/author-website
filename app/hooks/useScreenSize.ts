@@ -1,7 +1,22 @@
 import { useState, useEffect } from "react";
 
+/** Discrete breakpoint categories returned by the hook. */
 export type ScreenSize = "mobile" | "tablet" | "desktop";
 
+/**
+ * Tracks the current viewport width and returns a breakpoint category.
+ *
+ * Breakpoints:
+ *  - mobile  — width < 640 px
+ *  - tablet  — 640 px ≤ width < 1024 px
+ *  - desktop — width ≥ 1024 px
+ *
+ * The hook attaches a `resize` event listener and cleans it up on unmount.
+ * It is a no-op during SSR (returns "desktop" as a safe default until the
+ * client hydrates and the effect runs).
+ *
+ * @returns `{ screenSize, width, isMobile, isTablet, isDesktop }`
+ */
 export function useScreenSize() {
   const [screenSize, setScreenSize] = useState<ScreenSize>("desktop");
   const [width, setWidth] = useState<number>(0);

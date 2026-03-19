@@ -1,3 +1,16 @@
+/**
+ * PageContentService — D1 data access layer for CMS-managed page content.
+ *
+ * Each public page (home, about, contact, speaking) has one or more rows in
+ * the `page_contents` table containing a `title` and a rich-text `description`
+ * (HTML string edited via TinyMCE in the admin panel). Pages query their own
+ * rows by name; `getContentByPages` allows a single bulk query for the
+ * prefetch endpoint.
+ *
+ * Content is returned as raw HTML and must be sanitized before rendering with
+ * `dangerouslySetInnerHTML` — use `sanitizeHTML` (lightweight fallback) or
+ * DOMPurify (used in welcome.tsx and about.tsx).
+ */
 import type { PageContent } from "../types/db";
 
 export class PageContentService {
@@ -55,6 +68,12 @@ export class PageContentService {
     return result.success;
   }
 
+  /**
+   * Bulk-fetches content for multiple pages in a single D1 query.
+   * Returns a map of `{ [pageName]: PageContent[] }`.
+   * Pages with no rows are absent from the returned object (not empty arrays).
+   * Used by the `/api/prefetch` endpoint to seed all page content at once.
+   */
   async getContentByPages(pages: string[]): Promise<Record<string, PageContent[]>> {
     const placeholders = pages.map(() => "?").join(",");
     const result = await this.db

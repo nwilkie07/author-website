@@ -1,3 +1,28 @@
+/**
+ * Contact — contact form page component.
+ *
+ * Renders two sections:
+ *  1. CMS-driven intro block — title, rich-text description, and social links
+ *     (Facebook, Instagram). Uses `readFromCacheSync` to skip `<Suspense>`
+ *     on repeat visits.
+ *  2. Contact form — collects first name, last name, email, subject, message,
+ *     and an optional "Send me a copy" checkbox. Includes a Cloudflare
+ *     Turnstile CAPTCHA widget (explicit render mode via dynamic script inject).
+ *
+ * Form submission flow:
+ *  1. Validate the Turnstile token is present client-side.
+ *  2. POST JSON to `/api/contact/` with all fields including the captcha token
+ *     and the `sendCopy` flag.
+ *  3. On success, clear all fields and show a "Thank you!" message.
+ *  4. On error, reset the Turnstile widget and display the error message.
+ *
+ * Turnstile widget lifecycle:
+ *  - The Cloudflare Turnstile script is injected once into `<head>` using a
+ *    stable script ID to avoid duplicate injection on hot reloads.
+ *  - The widget is rendered explicitly (not auto-rendered) so we control
+ *    placement and can reset it after a failed submission.
+ *  - The widget is reset and the widget ID cleared on component unmount.
+ */
 import { Suspense, useState, useEffect, useRef } from "react";
 import { Await } from "react-router";
 import { Navbar } from "../components/Navbar";
